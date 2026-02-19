@@ -23,17 +23,6 @@ export async function createTask(prevState: unknown, formData: FormData) {
     return { data: null, error: { message: "Missing required fields" } };
   }
 
-  // Ensure user row exists before inserting task (avoids FK violation)
-  const wallet = user.user_metadata?.wallet_address as string | undefined;
-  if (!wallet) {
-    return { data: null, error: { message: "No wallet address found on auth user" } };
-  }
-
-  await supabase.from("users").upsert(
-    { id: user.id, wallet_address: wallet },
-    { onConflict: "id" }
-  );
-
   const result = await supabase.from("tasks").insert({
     title,
     description,
@@ -41,5 +30,24 @@ export async function createTask(prevState: unknown, formData: FormData) {
     agent_id: user.id,
   }).select();
 
+  if (result.error?.code === "23503") {
+    return { data: null, error: { message: "User profile not found. Please reconnect your wallet." } };
+  }
+
   return { data: result.data, error: result.error };
+}
+
+export async function getTasks() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("id, title, description, price_usdc, status, users:agent_id(display_name, telegram_handle, wallet_address)")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return { data: null, error: { message: error.message } };
+  }
+
+  return { data, error: null };
 }
