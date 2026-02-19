@@ -9,6 +9,7 @@ import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { SobekMascot } from "@/components/SobekMascot";
+import { LinkTelegram } from "@/components/link-telegram";
 
 interface Message {
   role: "user" | "agent";
@@ -57,8 +58,9 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#0a0f0a] text-white font-sans p-8">
-      {/* Wallet */}
-      <div className="absolute top-6 right-6">
+      {/* Wallet + Telegram */}
+      <div className="absolute top-6 right-6 flex items-center gap-3">
+        <LinkTelegram />
         <ConnectButton />
       </div>
 

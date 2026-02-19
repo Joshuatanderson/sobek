@@ -109,7 +109,9 @@ export type Database = {
           display_name: string | null
           id: string
           last_seen_at: string | null
+          telegram_chat_id: number | null
           telegram_handle: string | null
+          telegram_link_token: string | null
           wallet_address: string
         }
         Insert: {
@@ -117,7 +119,9 @@ export type Database = {
           display_name?: string | null
           id?: string
           last_seen_at?: string | null
+          telegram_chat_id?: number | null
           telegram_handle?: string | null
+          telegram_link_token?: string | null
           wallet_address: string
         }
         Update: {
@@ -125,7 +129,9 @@ export type Database = {
           display_name?: string | null
           id?: string
           last_seen_at?: string | null
+          telegram_chat_id?: number | null
           telegram_handle?: string | null
+          telegram_link_token?: string | null
           wallet_address?: string
         }
         Relationships: []
