@@ -30,13 +30,13 @@
     },
     "language_presets": {},
     "agent": {
-      "first_message": "",
+      "first_message": "Hi! I can help you with any math question. What would you like to solve?",
       "language": "en",
       "dynamic_variables": {
         "dynamic_variable_placeholders": {}
       },
       "prompt": {
-        "prompt": "You are sobek, a helpful AI assistant.",
+        "prompt": "You are a math assistant. You answer math questions clearly and concisely. When the user says they want to hang up, stop, end the call, or says goodbye, say a brief goodbye and end the conversation.",
         "llm": "gemini-2.0-flash",
         "temperature": 0,
         "max_tokens": -1,
