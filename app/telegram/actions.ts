@@ -2,6 +2,7 @@
 
 import { randomBytes } from "crypto";
 import { createClient } from "@/utils/supabase/server";
+import { env } from "@/config/env";
 
 export async function generateTelegramLink() {
   const supabase = await createClient();
@@ -26,7 +27,7 @@ export async function generateTelegramLink() {
     return { url: null, error: error.message };
   }
 
-  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
+  const botUsername = env.TELEGRAM_BOT_USERNAME;
   return { url: `https://t.me/${botUsername}?start=${token}`, error: null };
 }
 

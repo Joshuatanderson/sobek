@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAccount } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { generateTelegramLink, unlinkTelegram } from "@/app/telegram/actions";
@@ -18,70 +18,80 @@ const supabase = createClient();
 
 export function LinkTelegram() {
   const { isConnected } = useAccount();
-  const [linkUrl, setLinkUrl] = useState<string | null>(null);
   const [handle, setHandle] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchStatus = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from("users")
+      .select("telegram_handle, telegram_chat_id")
+      .eq("id", user.id)
+      .single();
+    if (data?.telegram_chat_id) {
+      setHandle(data.telegram_handle ?? "linked");
+      // Stop polling once linked
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!isConnected) {
       setHandle(null);
-      setLinkUrl(null);
       return;
     }
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase
-        .from("users")
-        .select("telegram_handle")
-        .eq("id", user.id)
-        .single();
-      if (data?.telegram_handle) setHandle(data.telegram_handle);
-    })();
-  }, [isConnected]);
+
+    fetchStatus();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session?.user) fetchStatus();
+      if (event === "SIGNED_OUT") setHandle(null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [isConnected, fetchStatus]);
 
   if (!isConnected) return null;
 
   async function handleLink() {
     setLoading(true);
     const { url } = await generateTelegramLink();
-    if (url) setLinkUrl(url);
+    if (url) {
+      window.open(url, "_blank");
+      // Poll every 2s until the webhook writes telegram_chat_id
+      pollRef.current = setInterval(fetchStatus, 2000);
+    }
     setLoading(false);
   }
 
   async function handleUnlink() {
     setLoading(true);
     const { error } = await unlinkTelegram();
-    if (!error) {
-      setHandle(null);
-      setLinkUrl(null);
-    }
+    if (!error) setHandle(null);
     setLoading(false);
   }
 
   if (handle) {
     return (
-      <div className="flex items-center gap-2">
-        <TelegramIcon className="size-4 text-emerald-300/60" />
-        <span className="text-sm text-emerald-300/60">@{handle}</span>
-        <Button variant="destructive" size="xs" onClick={handleUnlink} disabled={loading}>
-          Unlink
-        </Button>
-      </div>
-    );
-  }
-
-  if (linkUrl) {
-    return (
-      <a href={linkUrl} target="_blank" rel="noopener noreferrer">
-        <Button
-          size="sm"
-          className="bg-[#2AABEE] text-white hover:bg-[#229ED9]"
-        >
-          <TelegramIcon className="size-4" />
-          Open in Telegram
-        </Button>
-      </a>
+      <button
+        onClick={handleUnlink}
+        disabled={loading}
+        className="flex items-center gap-2 rounded-full px-3 py-1.5 hover:bg-white/10 transition-colors disabled:opacity-50"
+        title="Click to unlink"
+      >
+        <TelegramIcon className="size-4 text-[#2AABEE]" />
+        <span className="text-sm text-emerald-300/80">
+          @{handle === "linked" ? "connected" : handle}
+        </span>
+      </button>
     );
   }
 

@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "./supabase/admin";
+import { env } from "@/config/env";
 
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
+const TELEGRAM_BOT_TOKEN = env.TELEGRAM_BOT_TOKEN;
 
 /** Send a raw Telegram message to a chat ID. */
 export async function sendTelegramMessage(

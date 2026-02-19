@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { SobekMascot } from "@/components/SobekMascot";
 import { LinkTelegram } from "@/components/link-telegram";
+import { TelegramDebug } from "@/components/telegram-debug";
 
 interface Message {
   role: "user" | "agent";
@@ -61,7 +62,7 @@ export default function Home() {
       {/* Wallet + Telegram */}
       <div className="absolute top-6 right-6 flex items-center gap-3">
         <LinkTelegram />
-        <ConnectButton />
+        <ConnectButton showBalance={false} />
       </div>
 
       {/* Mascot */}
@@ -85,7 +86,7 @@ export default function Home() {
 
         {/* Action buttons */}
         <div className="flex items-center justify-center gap-3 pt-4">
-          <Link href="/tasks">
+          <Link href="/task">
             <Button size="lg">Earn USDC</Button>
           </Link>
         </div>
@@ -146,6 +147,7 @@ export default function Home() {
           </div>
         )}
       </div>
+      <TelegramDebug />
     </div>
   );
 }

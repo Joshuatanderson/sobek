@@ -23,6 +23,17 @@ export async function createTask(prevState: unknown, formData: FormData) {
     return { data: null, error: { message: "Missing required fields" } };
   }
 
+  // Ensure user row exists before inserting task (avoids FK violation)
+  const wallet = user.user_metadata?.wallet_address as string | undefined;
+  if (!wallet) {
+    return { data: null, error: { message: "No wallet address found on auth user" } };
+  }
+
+  await supabase.from("users").upsert(
+    { id: user.id, wallet_address: wallet },
+    { onConflict: "id" }
+  );
+
   const result = await supabase.from("tasks").insert({
     title,
     description,
