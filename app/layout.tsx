@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Sobek",
   description: "AI Math Assistant",
+  other: {
+    "base:app_id": "6997762671aadbc09e095f5f",
+  },
 };
 
 export default function RootLayout({
