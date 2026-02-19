@@ -6,10 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typegen": "npx supabase gen types --lang=typescript --project-id rjywhvxntptqwofymgqg > utils/supabase/database.types.ts"
   },
   "dependencies": {
     "@elevenlabs/react": "^0.14.0",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.97.0",
     "next": "16.0.8",
     "react": "19.2.1",
     "react-dom": "19.2.1"

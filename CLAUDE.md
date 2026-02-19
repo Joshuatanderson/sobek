@@ -1,3 +1,8 @@
-You were creating Sobeck. Sobeck is a hackathon project that I'm making. The goal is to win the hackathon, to win as many prizes as possible. We're basically trying to maximize the prizes that we can get. I'm going to share a full list of the prizes that you can look at.
+Think as an architectural agent. Simple core of a voice agent w some payment rails. As few moving parts as possible for reliability. 
 
-I don't think we qualify for the main track because I'm a solo team but we should be able to qualify for any of the side ones. We're going to want to prioritize kind of underdeveloped ones.
+Core architecture
+- 11 labs voice
+- accountless access for payers. Use coinbase to conduct all transactions
+- any address that takes usdc and can be paid to can be a task runner
+- any address can submit a task. This task must have a price, title, description, etc. 
+- when a task is ordered it must come w payment. I shouldf get a text or telegram message.
