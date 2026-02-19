@@ -1,7 +1,11 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useConversation } from "@elevenlabs/react";
 import { useCallback, useState, useRef, useEffect } from "react";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useWalletAuth } from "@/hooks/useWalletAuth";
 
 interface Message {
   role: "user" | "agent";
@@ -13,6 +17,7 @@ const AGENT_ID = "agent_7901khta30m9ehv9b3d5jvdx1qmh";
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const transcriptRef = useRef<HTMLDivElement>(null);
+  useWalletAuth();
 
   const conversation = useConversation({
     onMessage: ({ message, role }) => {
@@ -32,7 +37,7 @@ export default function Home() {
   const handleStart = useCallback(async () => {
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
-      await conversation.startSession({ agentId: AGENT_ID });
+      await conversation.startSession({ agentId: AGENT_ID } as Parameters<typeof conversation.startSession>[0]);
     } catch (err) {
       console.error("Failed to start:", err);
     }
@@ -47,6 +52,11 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-black text-white font-sans gap-8 p-8">
+      {/* Wallet */}
+      <div className="absolute top-6 right-6">
+        <ConnectButton />
+      </div>
+
       {/* Orb */}
       <div
         className={`orb ${conversation.isSpeaking ? "orb-speaking" : ""} ${isConnected ? "orb-connected" : ""}`}
