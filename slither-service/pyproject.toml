@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "slither-service"
+version = "0.1.0"
+description = ""
+authors = ["Joshua Anderson <joshuatanderson1@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+slither-analyzer = "^0.11.5"
+solc-select = "^1.2.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
