@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#166534"/>
+      <stop offset="100%" stop-color="#052e16"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="url(#bg)" stroke="#22c55e" stroke-width="1.5" opacity="0.9"/>
+  <!-- Crocodile head silhouette - top view -->
+  <path d="M32 12 C22 12 16 18 14 24 C13 27 13 30 14 32 C15 34 18 36 20 37 L22 38 C24 39 28 40 32 40 C36 40 40 39 42 38 L44 37 C46 36 49 34 50 32 C51 30 51 27 50 24 C48 18 42 12 32 12Z" fill="#15803d"/>
+  <!-- Snout ridge -->
+  <path d="M32 16 C28 16 22 20 20 26 L32 24 L44 26 C42 20 36 16 32 16Z" fill="#166534"/>
+  <!-- Left eye - neon -->
+  <ellipse cx="25" cy="28" rx="3.5" ry="4" fill="#0a0a0a" filter="url(#glow)"/>
+  <ellipse cx="25" cy="28" rx="2.5" ry="3" fill="#00ff87"/>
+  <ellipse cx="25" cy="28" rx="1" ry="2.5" fill="#0a0a0a"/>
+  <!-- Right eye - neon -->
+  <ellipse cx="39" cy="28" rx="3.5" ry="4" fill="#0a0a0a" filter="url(#glow)"/>
+  <ellipse cx="39" cy="28" rx="2.5" ry="3" fill="#00ff87"/>
+  <ellipse cx="39" cy="28" rx="1" ry="2.5" fill="#0a0a0a"/>
+  <!-- Nostrils -->
+  <circle cx="28" cy="36" r="1.2" fill="#0a2e0a"/>
+  <circle cx="36" cy="36" r="1.2" fill="#0a2e0a"/>
+  <!-- Teeth hint at jaw line -->
+  <path d="M20 37 L22 35 L24 37 L26 35 L28 37 L30 35 L32 37 L34 35 L36 37 L38 35 L40 37 L42 35 L44 37" fill="none" stroke="#d1fae5" stroke-width="0.8" opacity="0.5"/>
+  <!-- Scale texture dots -->
+  <circle cx="32" cy="18" r="0.6" fill="#22c55e" opacity="0.3"/>
+  <circle cx="28" cy="20" r="0.6" fill="#22c55e" opacity="0.3"/>
+  <circle cx="36" cy="20" r="0.6" fill="#22c55e" opacity="0.3"/>
+  <circle cx="32" cy="22" r="0.6" fill="#22c55e" opacity="0.3"/>
+  <!-- Outer glow ring -->
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#00ff87" stroke-width="0.5" opacity="0.2"/>
+</svg>

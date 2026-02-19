@@ -8,6 +8,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { SobekMascot } from "@/components/SobekMascot";
 
 interface Message {
   role: "user" | "agent";
@@ -39,7 +40,9 @@ export default function Home() {
   const handleStart = useCallback(async () => {
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
-      await conversation.startSession({ agentId: AGENT_ID } as Parameters<typeof conversation.startSession>[0]);
+      await conversation.startSession({ agentId: AGENT_ID } as Parameters<
+        typeof conversation.startSession
+      >[0]);
     } catch (err) {
       console.error("Failed to start:", err);
     }
@@ -53,19 +56,26 @@ export default function Home() {
   const isConnecting = conversation.status === "connecting";
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-black text-white font-sans p-8">
+    <div className="flex min-h-screen flex-col items-center bg-[#0a0f0a] text-white font-sans p-8">
       {/* Wallet */}
       <div className="absolute top-6 right-6">
         <ConnectButton />
       </div>
 
+      {/* Mascot */}
+      <div className="mt-16 mb-4">
+        <SobekMascot />
+      </div>
+
       {/* Hero */}
-      <div className="mt-24 mb-16 max-w-lg text-center space-y-4">
-        <h1 className="text-5xl font-bold tracking-tight">Sobek</h1>
-        <p className="text-lg text-zinc-400">
-          Voice-powered task marketplace on USDC
+      <div className="mb-16 max-w-lg text-center space-y-4">
+        <h1 className="text-5xl font-bold tracking-tight text-emerald-400">
+          Sobek
+        </h1>
+        <p className="text-lg text-emerald-300/60">
+          Voice-powered task marketplace. Powered by Base, Hedera, and x402.
         </p>
-        <p className="text-sm text-zinc-500 leading-relaxed">
+        <p className="text-sm text-emerald-200/40 leading-relaxed">
           Create tasks, set a price in USDC, and let task runners compete to
           fulfill them. No account needed — just connect your wallet and pay.
           Every transaction is onchain.
@@ -87,10 +97,11 @@ export default function Home() {
         />
 
         {/* Status */}
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-emerald-300/50">
           {conversation.status === "disconnected" && "Ready"}
           {isConnecting && "Connecting..."}
-          {isConnected && (conversation.isSpeaking ? "Agent speaking" : "Listening")}
+          {isConnected &&
+            (conversation.isSpeaking ? "Agent speaking" : "Listening")}
         </p>
 
         {/* Button */}
@@ -100,24 +111,34 @@ export default function Home() {
           className={`rounded-full px-8 py-3 text-sm font-medium transition-all ${
             isConnected
               ? "bg-red-600 hover:bg-red-700"
-              : "bg-cyan-600 hover:bg-cyan-700"
+              : "bg-emerald-600 hover:bg-emerald-700"
           } disabled:opacity-50`}
         >
-          {isConnecting ? "Connecting..." : isConnected ? "End Call" : "Start Call"}
+          {isConnecting
+            ? "Connecting..."
+            : isConnected
+              ? "End Call"
+              : "Start Call"}
         </button>
 
         {/* Transcript */}
         {messages.length > 0 && (
           <div
             ref={transcriptRef}
-            className="w-full max-w-md max-h-64 overflow-y-auto rounded-lg bg-zinc-900 p-4 space-y-2"
+            className="w-full max-w-md max-h-64 overflow-y-auto rounded-lg bg-emerald-950/50 border border-emerald-900/30 p-4 space-y-2"
           >
             {messages.map((msg, i) => (
               <div key={i} className="text-sm">
-                <span className={msg.role === "agent" ? "text-cyan-400" : "text-zinc-400"}>
-                  {msg.role === "agent" ? "Agent" : "You"}:
+                <span
+                  className={
+                    msg.role === "agent"
+                      ? "text-emerald-400"
+                      : "text-emerald-200/50"
+                  }
+                >
+                  {msg.role === "agent" ? "Sobek" : "You"}:
                 </span>{" "}
-                <span className="text-zinc-200">{msg.text}</span>
+                <span className="text-emerald-100/80">{msg.text}</span>
               </div>
             ))}
           </div>

@@ -14,7 +14,7 @@ export default function TaskPage() {
   const [state, formAction, isPending] = useActionState(createTask, null);
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-black text-white font-sans p-8">
+    <div className="flex min-h-screen flex-col items-center bg-[#0a0f0a] text-white font-sans p-8">
       {/* Wallet */}
       <div className="absolute top-6 right-6">
         <ConnectButton />
@@ -23,16 +23,16 @@ export default function TaskPage() {
       <div className="w-full max-w-lg mt-24 space-y-8">
         {/* Value prop */}
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold">List a Service</h1>
-          <p className="text-zinc-400">
+          <h1 className="text-3xl font-bold text-emerald-400">List a Service</h1>
+          <p className="text-emerald-300/60">
             List a service on Sobek. Get paid in USDC by humans and agents.
           </p>
         </div>
 
         {/* Auth gate */}
         {!isConnected ? (
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 space-y-4">
-            <p className="text-zinc-400">Connect your wallet to create a task.</p>
+          <div className="rounded-lg border border-emerald-900/30 bg-emerald-950/50 p-6 space-y-4">
+            <p className="text-emerald-300/60">Connect your wallet to create a task.</p>
             <ConnectButton />
           </div>
         ) : (
@@ -80,8 +80,8 @@ export default function TaskPage() {
         {/* Debug section */}
         {state && (
           <div className="space-y-2">
-            <h2 className="text-sm font-medium text-zinc-400">Debug Response</h2>
-            <pre className="rounded-lg bg-zinc-900 border border-zinc-800 p-4 text-sm text-zinc-300 overflow-x-auto whitespace-pre-wrap">
+            <h2 className="text-sm font-medium text-emerald-300/60">Debug Response</h2>
+            <pre className="rounded-lg bg-emerald-950/50 border border-emerald-900/30 p-4 text-sm text-emerald-200/70 overflow-x-auto whitespace-pre-wrap">
               {JSON.stringify(state, null, 2)}
             </pre>
           </div>
