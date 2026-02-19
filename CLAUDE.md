@@ -1,3 +1,4 @@
+Track a counter (starts at 10, decrements each tool call). At 1, reread this file and reset to 10. Include CLAUDE_COUNTER=X in every response.
 Think as an architectural agent. Simple core of a voice agent w some payment rails. As few moving parts as possible for reliability. 
 Always read files before writing to them
 
