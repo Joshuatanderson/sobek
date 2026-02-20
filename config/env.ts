@@ -6,13 +6,31 @@ function required(name: string): string {
   return value;
 }
 
-// Server-only vars — import this file from server code only
-export const env = {
-  SUPABASE_URL: required("NEXT_PUBLIC_SUPABASE_URL"),
-  SUPABASE_ANON_KEY: required("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY"),
-  SUPABASE_SERVICE_ROLE_KEY: required("SUPABASE_SERVICE_ROLE_KEY"),
-  TELEGRAM_BOT_TOKEN: required("TELEGRAM_BOT_TOKEN"),
-  TELEGRAM_WEBHOOK_SECRET: required("TELEGRAM_WEBHOOK_SECRET"),
-  TELEGRAM_BOT_USERNAME: required("NEXT_PUBLIC_TELEGRAM_BOT_USERNAME"),
-  WALLETCONNECT_PROJECT_ID: required("NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID"),
-} as const;
+// Server-only vars — lazily evaluated so static page generation doesn't
+// blow up when env vars are only available at runtime (e.g. Vercel builds).
+export const env = new Proxy(
+  {
+    SUPABASE_URL: "NEXT_PUBLIC_SUPABASE_URL",
+    SUPABASE_ANON_KEY: "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY",
+    SUPABASE_SERVICE_ROLE_KEY: "SUPABASE_SERVICE_ROLE_KEY",
+    TELEGRAM_BOT_TOKEN: "TELEGRAM_BOT_TOKEN",
+    TELEGRAM_WEBHOOK_SECRET: "TELEGRAM_WEBHOOK_SECRET",
+    TELEGRAM_BOT_USERNAME: "NEXT_PUBLIC_TELEGRAM_BOT_USERNAME",
+    WALLETCONNECT_PROJECT_ID: "NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID",
+  } as const,
+  {
+    get(target, prop: string) {
+      const envName = target[prop as keyof typeof target];
+      if (!envName) throw new Error(`Unknown env key: ${prop}`);
+      return required(envName);
+    },
+  }
+) as unknown as {
+  readonly SUPABASE_URL: string;
+  readonly SUPABASE_ANON_KEY: string;
+  readonly SUPABASE_SERVICE_ROLE_KEY: string;
+  readonly TELEGRAM_BOT_TOKEN: string;
+  readonly TELEGRAM_WEBHOOK_SECRET: string;
+  readonly TELEGRAM_BOT_USERNAME: string;
+  readonly WALLETCONNECT_PROJECT_ID: string;
+};
