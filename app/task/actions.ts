@@ -1,6 +1,9 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { supabaseAdmin } from "@/utils/supabase/admin";
+import { notifyUser } from "@/utils/telegram";
+import { revalidatePath } from "next/cache";
 
 export async function createTask(prevState: unknown, formData: FormData) {
   const supabase = await createClient();
@@ -50,4 +53,44 @@ export async function getTasks() {
   }
 
   return { data, error: null };
+}
+
+export async function createOrder(taskId: string, txHash: string) {
+  // Look up task to get provider's agent_id and details
+  const { data: task, error: taskError } = await supabaseAdmin
+    .from("tasks")
+    .select("id, title, price_usdc, agent_id")
+    .eq("id", taskId)
+    .single();
+
+  if (taskError || !task) {
+    return { data: null, error: { message: "Task not found" } };
+  }
+
+  // Insert order
+  const { data: order, error: orderError } = await supabaseAdmin
+    .from("orders")
+    .insert({
+      task_id: taskId,
+      tx_hash: txHash,
+      status: "paid",
+      paid_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (orderError) {
+    return { data: null, error: { message: orderError.message } };
+  }
+
+  // Notify provider via Telegram
+  if (task.agent_id) {
+    await notifyUser(
+      task.agent_id,
+      `New order for "${task.title}" ($${task.price_usdc} USDC). Tx: ${txHash}`
+    );
+  }
+
+  revalidatePath("/task");
+  return { data: order, error: null };
 }

@@ -13,9 +13,15 @@ export function TelegramDebug() {
   const [settingWebhook, setSettingWebhook] = useState(false);
 
   async function fetchWebhookInfo() {
-    const res = await fetch("/api/telegram/debug");
-    const data = await res.json();
-    setWebhookInfo(data.result ?? data);
+    try {
+      const res = await fetch("/api/telegram/debug");
+      const text = await res.text();
+      if (!text) { setWebhookInfo({ error: "Empty response" }); return; }
+      const data = JSON.parse(text);
+      setWebhookInfo(data.result ?? data);
+    } catch (e) {
+      setWebhookInfo({ error: String(e) });
+    }
   }
 
   async function fetchUserRow() {
@@ -34,13 +40,18 @@ export function TelegramDebug() {
 
   async function handleSetWebhook() {
     setSettingWebhook(true);
-    const res = await fetch("/api/telegram/debug", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "set" }),
-    });
-    const data = await res.json();
-    setWebhookInfo(data);
+    try {
+      const res = await fetch("/api/telegram/debug", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "set" }),
+      });
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : { error: "Empty response" };
+      setWebhookInfo(data);
+    } catch (e) {
+      setWebhookInfo({ error: String(e) });
+    }
     setSettingWebhook(false);
   }
 

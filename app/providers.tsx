@@ -2,17 +2,24 @@
 
 import "@rainbow-me/rainbowkit/styles.css";
 import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
-import { WagmiProvider } from "wagmi";
+import { WagmiProvider, cookieToInitialState } from "wagmi";
 import { base } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { wagmiConfig } from "@/config/wagmi";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  children,
+  cookie,
+}: {
+  children: React.ReactNode;
+  cookie: string | null;
+}) {
   const [queryClient] = useState(() => new QueryClient());
+  const initialState = cookieToInitialState(wagmiConfig, cookie);
 
   return (
-    <WagmiProvider config={wagmiConfig}>
+    <WagmiProvider config={wagmiConfig} initialState={initialState}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider initialChain={base}>{children}</RainbowKitProvider>
       </QueryClientProvider>

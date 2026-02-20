@@ -1,6 +1,7 @@
 import { getTasks } from "./actions";
-import { WalletButton } from "@/components/wallet-button";
+import { Header } from "@/components/header";
 import { CreateTaskForm } from "./create-task-form";
+import { BuyTaskButton } from "@/components/buy-task-button";
 import {
   Table,
   TableBody,
@@ -38,12 +39,10 @@ export default async function TaskPage() {
   const { data: tasks } = await getTasks();
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-[#0a0f0a] text-white font-sans p-8">
-      <div className="absolute top-6 right-6">
-        <WalletButton />
-      </div>
+    <div className="flex min-h-screen flex-col items-center bg-[#0a0f0a] text-white font-sans">
+      <Header />
 
-      <div className="w-full max-w-lg mt-24 space-y-8">
+      <div className="w-full max-w-lg mt-8 space-y-8 px-4 sm:px-8">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold text-emerald-400">List a Service</h1>
           <p className="text-emerald-300/60">
@@ -55,7 +54,7 @@ export default async function TaskPage() {
       </div>
 
       {/* Tasks table */}
-      <div className="w-full max-w-4xl mt-16 space-y-4">
+      <div className="w-full max-w-4xl mt-16 space-y-4 px-4 sm:px-8 pb-8">
         <h2 className="text-2xl font-bold text-emerald-400">Available Services</h2>
 
         {!tasks || tasks.length === 0 ? (
@@ -69,6 +68,7 @@ export default async function TaskPage() {
                   <TableHead className="text-emerald-300/80">Description</TableHead>
                   <TableHead className="text-emerald-300/80 text-right">Price (USDC)</TableHead>
                   <TableHead className="text-emerald-300/80">Provider</TableHead>
+                  <TableHead className="text-emerald-300/80"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -78,6 +78,9 @@ export default async function TaskPage() {
                     <TableCell className="text-emerald-200/70 max-w-xs truncate">{task.description}</TableCell>
                     <TableCell className="text-right text-emerald-100">${task.price_usdc.toFixed(2)}</TableCell>
                     <TableCell className="text-emerald-200/70">{getProviderLabel(task.users)}</TableCell>
+                    <TableCell>
+                      <BuyTaskButton taskId={task.id} priceUsdc={task.price_usdc} />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

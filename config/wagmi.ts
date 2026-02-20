@@ -1,6 +1,6 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { base } from "wagmi/chains";
-import { http } from "wagmi";
+import { http, cookieStorage, createStorage } from "wagmi";
 
 export const wagmiConfig = getDefaultConfig({
   appName: "Sobek",
@@ -10,4 +10,5 @@ export const wagmiConfig = getDefaultConfig({
     [base.id]: http(),
   },
   ssr: true,
+  storage: createStorage({ storage: cookieStorage }),
 });

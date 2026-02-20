@@ -2,25 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { env } from "@/config/env";
 
 export async function GET() {
-  // Check current webhook status
-  const res = await fetch(
-    `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getWebhookInfo`
-  );
-  const info = await res.json();
-  return NextResponse.json(info);
+  try {
+    const res = await fetch(
+      `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getWebhookInfo`
+    );
+    const text = await res.text();
+    if (!text) return NextResponse.json({ ok: false, error: "Empty response from Telegram" });
+    const info = JSON.parse(text);
+    return NextResponse.json(info);
+  } catch (e) {
+    return NextResponse.json({ ok: false, error: String(e) });
+  }
 }
 
 export async function POST(req: NextRequest) {
   const { action } = await req.json();
 
   if (action === "set") {
-    // Derive the webhook URL from the request
-    const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/$/, "");
-    if (!origin) {
-      return NextResponse.json({ ok: false, error: "Could not determine origin" });
-    }
-
-    const webhookUrl = `${origin}/api/telegram/webhook`;
+    const webhookUrl = "https://callsobek.xyz/api/telegram/webhook";
     const res = await fetch(
       `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/setWebhook`,
       {

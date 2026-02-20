@@ -4,12 +4,11 @@ export const dynamic = "force-dynamic";
 
 import { useConversation } from "@elevenlabs/react";
 import { useCallback, useState, useRef, useEffect } from "react";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { SobekMascot } from "@/components/SobekMascot";
-import { LinkTelegram } from "@/components/link-telegram";
+import { Header } from "@/components/header";
 import { TelegramDebug } from "@/components/telegram-debug";
 
 interface Message {
@@ -58,20 +57,16 @@ export default function Home() {
   const isConnecting = conversation.status === "connecting";
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-[#0a0f0a] text-white font-sans p-8">
-      {/* Wallet + Telegram */}
-      <div className="absolute top-6 right-6 flex items-center gap-3">
-        <LinkTelegram />
-        <ConnectButton showBalance={false} />
-      </div>
+    <div className="flex min-h-screen flex-col items-center bg-[#0a0f0a] text-white font-sans">
+      <Header />
 
       {/* Mascot */}
-      <div className="mt-16 mb-4">
+      <div className="mt-8 mb-4">
         <SobekMascot />
       </div>
 
       {/* Hero */}
-      <div className="mb-16 max-w-lg text-center space-y-4">
+      <div className="mb-16 max-w-lg text-center space-y-4 px-4">
         <h1 className="text-5xl font-bold tracking-tight text-emerald-400">
           Sobek
         </h1>
