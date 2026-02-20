@@ -14,7 +14,7 @@ export default async function SettingsPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="text-emerald-300/60 hover:text-emerald-300 transition-colors"
+            className="text-sobek-green-light/80 hover:text-sobek-green-light transition-colors"
             aria-label="Back to home"
           >
             <svg
@@ -31,17 +31,17 @@ export default async function SettingsPage() {
               <path d="m15 18-6-6 6-6" />
             </svg>
           </Link>
-          <h1 className="text-3xl font-bold text-emerald-400">Settings</h1>
+          <h1 className="text-3xl font-bold text-sobek-gold">Settings</h1>
         </div>
 
         {!user ? (
-          <div className="rounded-lg border border-emerald-900/30 bg-emerald-950/50 p-6">
-            <p className="text-emerald-300/60">
+          <div className="rounded-lg border border-sobek-forest/30 bg-sobek-forest/50 p-6">
+            <p className="text-sobek-green-light/80">
               Connect your wallet to access settings.
             </p>
           </div>
         ) : (
-          <div className="rounded-lg border border-emerald-900/30 bg-emerald-950/50 p-6">
+          <div className="rounded-lg border border-sobek-forest/30 bg-sobek-forest/50 p-6">
             <SettingsForm currentDisplayName={user.display_name} />
           </div>
         )}

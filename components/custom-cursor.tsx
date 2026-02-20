@@ -7,6 +7,14 @@ const INTERACTIVE_SELECTOR = "a, button, [role='button'], input, textarea, selec
 // Cursor arrow shape — tip at (0,0), classic pointer silhouette
 const ARROW_PATH = "M 1 1 L 1 16.5 L 5 13 L 8.5 19.5 L 11 18.5 L 7.5 12 L 13 11.5 Z";
 
+// Open claw — three curved talons spread wide, reptilian grab
+const CLAW_PATH =
+  "M 1 0.5 C 0.5 2.5 1.5 5 3.5 7 L 4.5 3.5 L 5.5 0 L 7 3.5 L 9.5 0.5 C 10.5 2.5 10 5 9 7 C 10 10 8 12 5.5 12 C 3 12 1 10 1.5 7 Z";
+
+// Closed claw — talons squeezed together, grabbing
+const CLAW_GRAB_PATH =
+  "M 2.5 1.5 C 2 3 2.5 5 3.5 7 L 4.5 4 L 5.5 1.5 L 7 4 L 8 1.5 C 9 3 9 5 8.5 7 C 9.5 10 8 12 5.5 12 C 3 12 1.5 10 2 7 Z";
+
 type CursorState = "default" | "hover" | "active";
 
 export function CustomCursor() {
@@ -55,9 +63,9 @@ export function CustomCursor() {
   }, [visible, state]);
 
   const styles = {
-    default: { w: 18, h: 22, fill: "#34d399", stroke: "rgba(0,0,0,0.4)", filter: "none" },
-    hover:   { w: 22, h: 27, fill: "#6ee7b7", stroke: "rgba(0,0,0,0.3)", filter: "drop-shadow(0 0 6px rgba(110, 231, 183, 0.5))" },
-    active:  { w: 15, h: 19, fill: "#a7f3d0", stroke: "rgba(0,0,0,0.3)", filter: "drop-shadow(0 0 10px rgba(167, 243, 208, 0.6))" },
+    default: { w: 18, h: 22, fill: "#cddfc5", stroke: "rgba(0,0,0,0.4)", filter: "none" },
+    hover:   { w: 22, h: 27, fill: "#cddfc5", stroke: "rgba(0,0,0,0.3)", filter: "drop-shadow(0 0 6px rgba(205, 223, 197, 0.5))" },
+    active:  { w: 15, h: 19, fill: "#e2eeda", stroke: "rgba(0,0,0,0.3)", filter: "drop-shadow(0 0 10px rgba(205, 223, 197, 0.6))" },
   }[state];
 
   return (

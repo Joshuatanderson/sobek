@@ -8,6 +8,7 @@ import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import Image from "next/image";
 import { SobekMascot } from "@/components/SobekMascot";
 import { Header } from "@/components/header";
 import {
@@ -168,9 +169,21 @@ export default function Home() {
           Sobek
         </h1>
         <p className="text-lg text-sobek-green-light/80">
-          Voice-powered task marketplace. Powered by Base, Hedera, and x402.
+          Voice-powered task marketplace.
         </p>
-        <p className="text-sm text-sobek-green-light/60 leading-relaxed">
+
+        {/* Built on */}
+        <div className="flex items-center justify-center gap-6 pt-2">
+          <span className="text-xs uppercase tracking-widest text-sobek-green-light/50">
+            Built on
+          </span>
+          <div className="flex items-center gap-5">
+            <Image src="/base-logo.svg" alt="Base" width={28} height={28} className="opacity-70 hover:opacity-100 transition-opacity" />
+            <Image src="/hedera-logo.svg" alt="Hedera" width={24} height={24} className="opacity-70 hover:opacity-100 transition-opacity" />
+            <Image src="/adi-logo.svg" alt="ADI" width={72} height={24} className="opacity-70 hover:opacity-100 transition-opacity" />
+          </div>
+        </div>
+        <p className="text-sm text-sobek-green-light/80 leading-relaxed">
           Create tasks, set a price in USDC, and let task runners compete to
           fulfill them. No account needed — just connect your wallet and pay.
           Every transaction is onchain.
@@ -194,29 +207,23 @@ export default function Home() {
         />
 
         {/* Status */}
-        <p className="text-sm text-sobek-green/50">
-          {conversation.status === "disconnected" && "Ready"}
+        <p className="text-lg text-sobek-green-light/80">
+          {conversation.status === "disconnected" && "Click the orb to start."}
           {isConnecting && "Connecting..."}
           {isConnected &&
             (conversation.isSpeaking ? "Agent speaking" : muted ? "Muted" : "Listening")}
         </p>
 
-        {/* Buttons */}
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={isConnected ? handleEnd : handleStart}
-            disabled={isConnecting}
-            variant={isConnected ? "destructive" : "default"}
-            size="lg"
-            className="rounded-full px-8"
-          >
-            {isConnecting
-              ? "Connecting..."
-              : isConnected
-                ? "End Call"
-                : "Start Call"}
-          </Button>
-          {isConnected && (
+        {isConnected && (
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleEnd}
+              variant="destructive"
+              size="lg"
+              className="rounded-full px-8"
+            >
+              End Call
+            </Button>
             <Button
               onClick={() => setMuted((m) => !m)}
               variant="outline"
@@ -225,8 +232,8 @@ export default function Home() {
             >
               {muted ? "Unmute" : "Mute"}
             </Button>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Transcript */}
         {messages.length > 0 && (

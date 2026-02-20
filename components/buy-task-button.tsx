@@ -78,12 +78,12 @@ export function BuyTaskButton({
 
   if (!isConnected) {
     return (
-      <span className="text-emerald-300/40 text-sm">Connect wallet</span>
+      <span className="text-sobek-green-light/60 text-sm">Connect wallet</span>
     );
   }
 
   if (status === "success") {
-    return <span className="text-emerald-400 text-sm font-medium">Paid</span>;
+    return <span className="text-sobek-gold text-sm font-medium">Paid</span>;
   }
 
   if (status === "error") {

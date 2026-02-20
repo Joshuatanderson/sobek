@@ -45,8 +45,8 @@ export default async function TaskPage() {
 
       <div className="w-full max-w-lg mt-8 space-y-8 px-4 sm:px-8">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-emerald-400">List a Service</h1>
-          <p className="text-emerald-300/60">
+          <h1 className="text-3xl font-bold text-sobek-gold">List a Service</h1>
+          <p className="text-sobek-green-light/80">
             List a service on Sobek. Get paid in USDC by humans and agents.
           </p>
         </div>
@@ -56,29 +56,29 @@ export default async function TaskPage() {
 
       {/* Tasks table */}
       <div className="w-full max-w-6xl mt-16 space-y-4 px-4 sm:px-8 pb-8">
-        <h2 className="text-2xl font-bold text-emerald-400">Available Services</h2>
+        <h2 className="text-2xl font-bold text-sobek-gold">Available Services</h2>
 
         {!tasks || tasks.length === 0 ? (
-          <p className="text-emerald-300/60">No services listed yet.</p>
+          <p className="text-sobek-green-light/80">No services listed yet.</p>
         ) : (
-          <div className="rounded-lg border border-emerald-900/30 overflow-hidden">
+          <div className="rounded-lg border border-sobek-forest/30 overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="border-emerald-900/30 hover:bg-emerald-950/30">
-                  <TableHead className="text-emerald-300/80">Title</TableHead>
-                  <TableHead className="text-emerald-300/80">Description</TableHead>
-                  <TableHead className="text-emerald-300/80 text-right">Price (USDC)</TableHead>
-                  <TableHead className="text-emerald-300/80">Provider</TableHead>
-                  <TableHead className="text-emerald-300/80"></TableHead>
+                <TableRow className="border-sobek-forest/30 hover:bg-sobek-forest/20">
+                  <TableHead className="text-sobek-green-light/80">Title</TableHead>
+                  <TableHead className="text-sobek-green-light/80">Description</TableHead>
+                  <TableHead className="text-sobek-green-light/80 text-right">Price (USDC)</TableHead>
+                  <TableHead className="text-sobek-green-light/80">Provider</TableHead>
+                  <TableHead className="text-sobek-green-light/80"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(tasks as TaskRow[]).map((task) => (
-                  <TableRow key={task.id} className="border-emerald-900/30 hover:bg-emerald-950/30">
-                    <TableCell className="font-medium text-emerald-100">{task.title}</TableCell>
-                    <TableCell className="text-emerald-200/70 max-w-xs truncate">{task.description}</TableCell>
-                    <TableCell className="text-right text-emerald-100">${task.price_usdc.toFixed(2)}</TableCell>
-                    <TableCell className="text-emerald-200/70">{getProviderLabel(task.users)}</TableCell>
+                  <TableRow key={task.id} className="border-sobek-forest/30 hover:bg-sobek-forest/20">
+                    <TableCell className="font-medium text-sobek-green-light">{task.title}</TableCell>
+                    <TableCell className="text-sobek-green-light/70 max-w-xs truncate">{task.description}</TableCell>
+                    <TableCell className="text-right text-sobek-green-light">${task.price_usdc.toFixed(2)}</TableCell>
+                    <TableCell className="text-sobek-green-light/70">{getProviderLabel(task.users)}</TableCell>
                     <TableCell>
                       {task.users?.wallet_address && (
                         <div className="flex items-center gap-2">

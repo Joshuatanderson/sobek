@@ -68,16 +68,16 @@ export function TelegramDebug() {
   const hasWebhook = webhookUrl && webhookUrl.length > 0;
 
   return (
-    <div className="fixed bottom-4 right-4 w-96 rounded-lg bg-gray-900 border border-emerald-900/50 p-4 text-xs font-mono text-emerald-200/80 space-y-3 z-50">
+    <div className="fixed bottom-4 right-4 w-96 rounded-lg bg-gray-900 border border-sobek-forest/50 p-4 text-xs font-mono text-sobek-green-light/80 space-y-3 z-50">
       <div className="flex items-center justify-between">
-        <span className="text-emerald-400 font-bold text-sm">Telegram Debug</span>
-        <Button variant="link" size="xs" onClick={() => { fetchWebhookInfo(); fetchUserRow(); }} className="text-emerald-500 hover:text-emerald-300">
+        <span className="text-sobek-gold font-bold text-sm">Telegram Debug</span>
+        <Button variant="link" size="xs" onClick={() => { fetchWebhookInfo(); fetchUserRow(); }} className="text-sobek-green hover:text-sobek-green-light">
           refresh
         </Button>
       </div>
 
       <div className="space-y-1">
-        <div className="text-emerald-400/60">Webhook:</div>
+        <div className="text-sobek-green-light/60">Webhook:</div>
         {hasWebhook ? (
           <div className="text-green-400 break-all">{webhookUrl}</div>
         ) : (
@@ -89,14 +89,14 @@ export function TelegramDebug() {
           </div>
         )}
         {webhookInfo && (
-          <pre className="mt-1 text-[10px] text-emerald-200/40 overflow-auto max-h-24">
+          <pre className="mt-1 text-[10px] text-sobek-green-light/40 overflow-auto max-h-24">
             {JSON.stringify(webhookInfo, null, 2)}
           </pre>
         )}
       </div>
 
       <div className="space-y-1">
-        <div className="text-emerald-400/60">User DB row:</div>
+        <div className="text-sobek-green-light/60">User DB row:</div>
         {userRow ? (
           <pre className="text-[10px] overflow-auto max-h-24">
             {JSON.stringify(userRow, null, 2)}

@@ -198,7 +198,7 @@
     cursor: none !important;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-sobek-green-light/80;
     font-family: var(--font-dm-sans), sans-serif;
   }
   h1, h2, h3, h4, h5, h6 {

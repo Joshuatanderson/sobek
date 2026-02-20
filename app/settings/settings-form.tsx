@@ -24,7 +24,7 @@ export function SettingsForm({
           defaultValue={currentDisplayName ?? ""}
           required
         />
-        <p className="text-xs text-emerald-300/40">
+        <p className="text-xs text-sobek-green-light/60">
           This is how you appear to others on Sobek.
         </p>
       </div>
@@ -34,7 +34,7 @@ export function SettingsForm({
       </Button>
 
       {state?.success && (
-        <p className="text-sm text-emerald-400">Display name updated.</p>
+        <p className="text-sm text-sobek-gold">Display name updated.</p>
       )}
       {state?.error && (
         <p className="text-sm text-red-400">{state.error}</p>

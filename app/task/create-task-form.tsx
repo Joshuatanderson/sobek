@@ -16,8 +16,8 @@ export function CreateTaskForm() {
   return (
     <>
       {!isConnected ? (
-        <div className="rounded-lg border border-emerald-900/30 bg-emerald-950/50 p-6 space-y-4">
-          <p className="text-emerald-300/60">Connect your wallet to create a task.</p>
+        <div className="rounded-lg border border-sobek-forest/30 bg-sobek-forest/50 p-6 space-y-4">
+          <p className="text-sobek-green-light/80">Connect your wallet to create a task.</p>
           <ConnectButton />
         </div>
       ) : (
@@ -64,8 +64,8 @@ export function CreateTaskForm() {
 
       {state && (
         <div className="space-y-2">
-          <h2 className="text-sm font-medium text-emerald-300/60">Debug Response</h2>
-          <pre className="rounded-lg bg-emerald-950/50 border border-emerald-900/30 p-4 text-sm text-emerald-200/70 overflow-x-auto whitespace-pre-wrap">
+          <h2 className="text-sm font-medium text-sobek-green-light/80">Debug Response</h2>
+          <pre className="rounded-lg bg-sobek-forest/50 border border-sobek-forest/30 p-4 text-sm text-sobek-green-light/70 overflow-x-auto whitespace-pre-wrap">
             {JSON.stringify(state, null, 2)}
           </pre>
         </div>

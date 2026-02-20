@@ -75,7 +75,7 @@ export function BuyNativeButton({
   if (!isConnected) return null;
 
   if (status === "success") {
-    return <span className="text-emerald-400 text-sm font-medium">Paid</span>;
+    return <span className="text-sobek-gold text-sm font-medium">Paid</span>;
   }
 
   if (status === "error") {

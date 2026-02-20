@@ -331,10 +331,10 @@ function buildPolygonsSvg(
       const rdMod = 0.5 + cell.rd;
       const fa = (cell.fill * fillScale * rdMod).toFixed(4);
       const sa = (strokeAlpha * (0.8 + cell.rd * 0.4)).toFixed(4);
-      const r = Math.round(42 + cell.rd * 20);
-      const g = Math.round(220 - cell.rd * 18);
-      const b = Math.round(160 - cell.rd * 14);
-      return `<polygon points="${cell.pts}" fill="rgba(${r},${g},${b},${fa})" stroke="rgba(52,211,153,${sa})" stroke-width="${strokeWidth}" stroke-linejoin="round"/>`;
+      const r = Math.round(195 + cell.rd * 20);
+      const g = Math.round(215 + cell.rd * 16);
+      const b = Math.round(187 + cell.rd * 20);
+      return `<polygon points="${cell.pts}" fill="rgba(${r},${g},${b},${fa})" stroke="rgba(205,223,197,${sa})" stroke-width="${strokeWidth}" stroke-linejoin="round"/>`;
     })
     .join("\n");
 }

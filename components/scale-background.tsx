@@ -218,9 +218,9 @@ function PerlinBreath() {
           const alpha = v * v * 0.08;
 
           const i = (y * w + x) * 4;
-          d[i] = 52;
-          d[i + 1] = 211;
-          d[i + 2] = 153;
+          d[i] = 205;
+          d[i + 1] = 223;
+          d[i + 2] = 197;
           d[i + 3] = Math.min(alpha * 255, 255);
         }
       }
