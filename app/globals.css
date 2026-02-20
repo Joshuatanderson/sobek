@@ -77,15 +77,6 @@
   50% { transform: scale(1.15); }
 }
 
-.scale-breath {
-  background: radial-gradient(ellipse 700px 500px at 50% 50%, rgba(52, 211, 153, 0.08), transparent);
-  animation: scale-breathe 8s ease-in-out infinite;
-}
-
-@keyframes scale-breathe {
-  0%, 100% { transform: translate(-35%, -15%); opacity: 0.4; }
-  50% { transform: translate(35%, 15%); opacity: 1; }
-}
 
 :root {
   --radius: 0.625rem;
