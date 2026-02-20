@@ -86,7 +86,7 @@ export function LinkTelegram() {
         size="sm"
         onClick={handleUnlink}
         disabled={loading}
-        className="rounded-full gap-2"
+        className="rounded-full gap-2 hover:bg-sobek-forest/50"
         title="Click to unlink"
       >
         <TelegramIcon className="size-4 text-[#2AABEE]" />

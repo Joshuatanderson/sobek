@@ -7,14 +7,6 @@ const INTERACTIVE_SELECTOR = "a, button, [role='button'], input, textarea, selec
 // Cursor arrow shape — tip at (0,0), classic pointer silhouette
 const ARROW_PATH = "M 1 1 L 1 16.5 L 5 13 L 8.5 19.5 L 11 18.5 L 7.5 12 L 13 11.5 Z";
 
-// Open claw — three curved talons spread wide, reptilian grab
-const CLAW_PATH =
-  "M 1 0.5 C 0.5 2.5 1.5 5 3.5 7 L 4.5 3.5 L 5.5 0 L 7 3.5 L 9.5 0.5 C 10.5 2.5 10 5 9 7 C 10 10 8 12 5.5 12 C 3 12 1 10 1.5 7 Z";
-
-// Closed claw — talons squeezed together, grabbing
-const CLAW_GRAB_PATH =
-  "M 2.5 1.5 C 2 3 2.5 5 3.5 7 L 4.5 4 L 5.5 1.5 L 7 4 L 8 1.5 C 9 3 9 5 8.5 7 C 9.5 10 8 12 5.5 12 C 3 12 1.5 10 2 7 Z";
-
 type CursorState = "default" | "hover" | "active";
 
 export function CustomCursor() {
@@ -63,34 +55,34 @@ export function CustomCursor() {
   }, [visible, state]);
 
   const styles = {
-    default: { w: 18, h: 22, fill: "#cddfc5", stroke: "rgba(0,0,0,0.4)", filter: "none", vbW: 14, vbH: 21, path: ARROW_PATH },
-    hover:   { w: 26, h: 26, fill: "#cddfc5", stroke: "rgba(0,0,0,0.3)", filter: "drop-shadow(0 0 6px rgba(205, 223, 197, 0.5))", vbW: 12, vbH: 13, path: CLAW_PATH },
-    active:  { w: 22, h: 22, fill: "#e2eeda", stroke: "rgba(0,0,0,0.3)", filter: "drop-shadow(0 0 10px rgba(205, 223, 197, 0.6))", vbW: 12, vbH: 13, path: CLAW_GRAB_PATH },
+    default: { w: 18, h: 22, fill: "#cddfc5", stroke: "rgba(0,0,0,0.4)", filter: "none" },
+    hover:   { w: 20, h: 24, fill: "#cddfc5", stroke: "rgba(0,0,0,0.3)", filter: "drop-shadow(0 0 6px rgba(205, 223, 197, 0.5))" },
+    active:  { w: 16, h: 20, fill: "#e2eeda", stroke: "rgba(0,0,0,0.3)", filter: "drop-shadow(0 0 10px rgba(205, 223, 197, 0.6))" },
   }[state];
 
   return (
     <svg
       ref={arrowRef}
       className="fixed top-0 left-0 z-[9999] pointer-events-none"
-      viewBox={`0 0 ${styles.vbW} ${styles.vbH}`}
+      viewBox="0 0 14 21"
       fill="none"
       style={{
         opacity: visible ? 1 : 0,
         width: styles.w,
         height: styles.h,
-        marginLeft: -styles.w * (1 / styles.vbW),
-        marginTop: -styles.h * (1 / styles.vbH),
+        marginLeft: -styles.w * (1 / 14),
+        marginTop: -styles.h * (1 / 21),
         filter: styles.filter,
         transition: "width 0.15s, height 0.15s, margin 0.15s, filter 0.15s, opacity 0.15s",
       }}
     >
       <path
-        d={styles.path}
+        d={ARROW_PATH}
         fill={styles.fill}
         stroke={styles.stroke}
         strokeWidth="1"
         strokeLinejoin="round"
-        style={{ transition: "fill 0.15s, d 0.15s" }}
+        style={{ transition: "fill 0.15s" }}
       />
     </svg>
   );
