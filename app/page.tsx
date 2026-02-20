@@ -10,7 +10,17 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { SobekMascot } from "@/components/SobekMascot";
 import { Header } from "@/components/header";
-import { TelegramDebug } from "@/components/telegram-debug";
+import {
+  getAccount,
+  writeContract,
+  sendTransaction,
+  waitForTransactionReceipt,
+} from "@wagmi/core";
+import { parseUnits, parseEther, erc20Abi } from "viem";
+import { wagmiConfig } from "@/config/wagmi";
+import { BASE_USDC_ADDRESS, ETH_USD_PRICE } from "@/config/constants";
+import { createOrder } from "@/app/task/actions";
+
 
 interface Message {
   role: "user" | "agent";
@@ -33,7 +43,7 @@ export default function Home() {
           const supabase = createClient();
           const { data, error } = await supabase
             .from("tasks")
-            .select("title, description, price_usdc, status, users:agent_id(display_name, telegram_handle)")
+            .select("id, title, description, price_usdc, status, users:agent_id(display_name, telegram_handle)")
             .order("created_at", { ascending: false });
 
           if (error) return "Sorry, I couldn't fetch the tasks right now.";
@@ -42,11 +52,72 @@ export default function Home() {
           const lines = data.map((t) => {
             const user = t.users as { display_name: string | null; telegram_handle: string | null } | null;
             const creator = user?.display_name || user?.telegram_handle || "Anonymous";
-            return `${t.title} — ${t.description}. Price: $${t.price_usdc} USDC. Status: ${t.status}. Posted by ${creator}.`;
+            return `[Task ID: ${t.id}] ${t.title} — ${t.description}. Price: $${t.price_usdc} USDC. Status: ${t.status}. Posted by ${creator}.`;
           });
           return `There are ${data.length} tasks available:\n${lines.join("\n")}`;
         } catch {
           return "Sorry, something went wrong fetching tasks.";
+        }
+      },
+      initiate_payment: async ({ task_id, payment_method }: { task_id: string; payment_method: "usdc" | "native" }) => {
+        try {
+          // Check wallet connection
+          const account = getAccount(wagmiConfig);
+          if (!account.isConnected || !account.address) {
+            return "The user's wallet is not connected. Please ask them to connect their wallet first using the button on the page.";
+          }
+
+          // Fetch task details including recipient wallet
+          const supabase = createClient();
+          const { data: task, error: taskError } = await supabase
+            .from("tasks")
+            .select("id, title, price_usdc, users:agent_id(wallet_address)")
+            .eq("id", task_id)
+            .single();
+
+          if (taskError || !task) {
+            return "I couldn't find that task. It may have been removed.";
+          }
+
+          const user = task.users as { wallet_address: string } | null;
+          if (!user?.wallet_address) {
+            return "The task provider hasn't set up a wallet address to receive payments.";
+          }
+
+          const recipientAddress = user.wallet_address as `0x${string}`;
+          const priceUsdc = task.price_usdc;
+          let txHash: `0x${string}`;
+
+          if (payment_method === "usdc") {
+            txHash = await writeContract(wagmiConfig, {
+              address: BASE_USDC_ADDRESS,
+              abi: erc20Abi,
+              functionName: "transfer",
+              args: [recipientAddress, parseUnits(priceUsdc.toString(), 6)],
+            });
+          } else {
+            const ethAmount = priceUsdc / ETH_USD_PRICE;
+            txHash = await sendTransaction(wagmiConfig, {
+              to: recipientAddress,
+              value: parseEther(ethAmount.toFixed(18)),
+            });
+          }
+
+          // Wait for on-chain confirmation
+          await waitForTransactionReceipt(wagmiConfig, { hash: txHash });
+
+          // Record the order
+          const currency = payment_method === "usdc" ? "USDC" : "ETH";
+          const orderResult = await createOrder(task_id, txHash, currency);
+
+          if (orderResult.error) {
+            return `Payment went through on-chain (tx: ${txHash}), but there was an issue recording the order: ${orderResult.error.message}. The provider will still receive the funds.`;
+          }
+
+          return `Payment successful! The order for "${task.title}" has been placed. Transaction hash: ${txHash}.`;
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message.split("\n")[0] : "Unknown error";
+          return `Payment failed: ${message}. The user may have rejected the transaction or there was a network issue.`;
         }
       },
     },
@@ -178,7 +249,6 @@ export default function Home() {
           </div>
         )}
       </div>
-      <TelegramDebug />
     </div>
   );
 }
