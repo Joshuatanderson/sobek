@@ -2,6 +2,7 @@ import { getTasks } from "./actions";
 import { Header } from "@/components/header";
 import { CreateTaskForm } from "./create-task-form";
 import { BuyTaskButton } from "@/components/buy-task-button";
+import { BuyNativeButton } from "@/components/buy-native-button";
 import {
   Table,
   TableBody,
@@ -54,7 +55,7 @@ export default async function TaskPage() {
       </div>
 
       {/* Tasks table */}
-      <div className="w-full max-w-4xl mt-16 space-y-4 px-4 sm:px-8 pb-8">
+      <div className="w-full max-w-6xl mt-16 space-y-4 px-4 sm:px-8 pb-8">
         <h2 className="text-2xl font-bold text-emerald-400">Available Services</h2>
 
         {!tasks || tasks.length === 0 ? (
@@ -80,11 +81,18 @@ export default async function TaskPage() {
                     <TableCell className="text-emerald-200/70">{getProviderLabel(task.users)}</TableCell>
                     <TableCell>
                       {task.users?.wallet_address && (
-                        <BuyTaskButton
-                          taskId={task.id}
-                          priceUsdc={task.price_usdc}
-                          recipientAddress={task.users.wallet_address as `0x${string}`}
-                        />
+                        <div className="flex items-center gap-2">
+                          <BuyTaskButton
+                            taskId={task.id}
+                            priceUsdc={task.price_usdc}
+                            recipientAddress={task.users.wallet_address as `0x${string}`}
+                          />
+                          <BuyNativeButton
+                            taskId={task.id}
+                            price={task.price_usdc}
+                            recipientAddress={task.users.wallet_address as `0x${string}`}
+                          />
+                        </div>
                       )}
                     </TableCell>
                   </TableRow>

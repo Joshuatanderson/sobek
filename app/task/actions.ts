@@ -55,7 +55,7 @@ export async function getTasks() {
   return { data, error: null };
 }
 
-export async function createOrder(taskId: string, txHash: string) {
+export async function createOrder(taskId: string, txHash: string, paymentCurrency: string = "USDC") {
   // Look up task to get provider's agent_id and details
   const { data: task, error: taskError } = await supabaseAdmin
     .from("tasks")
@@ -87,7 +87,7 @@ export async function createOrder(taskId: string, txHash: string) {
   if (task.agent_id) {
     await notifyUser(
       task.agent_id,
-      `New order for "${task.title}" ($${task.price_usdc} USDC). Tx: ${txHash}`
+      `New order for "${task.title}" (${paymentCurrency === "USDC" ? "$" : ""}${task.price_usdc} ${paymentCurrency}). Tx: ${txHash}`
     );
   }
 
