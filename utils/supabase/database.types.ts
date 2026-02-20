@@ -20,8 +20,13 @@ export type Database = {
           client_id: string | null
           created_at: string | null
           custom_instructions: string | null
+          dispute_initiated_at: string | null
+          dispute_initiated_by: string | null
+          escrow_status: string
+          hedera_schedule_id: string | null
           id: string
           paid_at: string | null
+          release_at: string | null
           status: string
           task_id: string | null
           tx_hash: string | null
@@ -31,8 +36,13 @@ export type Database = {
           client_id?: string | null
           created_at?: string | null
           custom_instructions?: string | null
+          dispute_initiated_at?: string | null
+          dispute_initiated_by?: string | null
+          escrow_status?: string
+          hedera_schedule_id?: string | null
           id?: string
           paid_at?: string | null
+          release_at?: string | null
           status?: string
           task_id?: string | null
           tx_hash?: string | null
@@ -42,8 +52,13 @@ export type Database = {
           client_id?: string | null
           created_at?: string | null
           custom_instructions?: string | null
+          dispute_initiated_at?: string | null
+          dispute_initiated_by?: string | null
+          escrow_status?: string
+          hedera_schedule_id?: string | null
           id?: string
           paid_at?: string | null
+          release_at?: string | null
           status?: string
           task_id?: string | null
           tx_hash?: string | null
@@ -109,6 +124,7 @@ export type Database = {
           display_name: string | null
           id: string
           last_seen_at: string | null
+          reputation_score: number
           telegram_chat_id: number | null
           telegram_handle: string | null
           telegram_link_token: string | null
@@ -119,6 +135,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           last_seen_at?: string | null
+          reputation_score?: number
           telegram_chat_id?: number | null
           telegram_handle?: string | null
           telegram_link_token?: string | null
@@ -129,6 +146,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           last_seen_at?: string | null
+          reputation_score?: number
           telegram_chat_id?: number | null
           telegram_handle?: string | null
           telegram_link_token?: string | null
