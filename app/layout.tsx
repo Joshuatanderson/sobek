@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { CustomCursor } from "@/components/custom-cursor";
+import { ClickEffect } from "@/components/click-effect";
+import { ScaleBackground } from "@/components/scale-background";
 import { headers } from "next/headers";
 
 const geistSans = Geist({
@@ -38,7 +40,9 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <ScaleBackground />
         <CustomCursor />
+        <ClickEffect />
         <Providers cookie={cookie}>{children}</Providers>
       </body>
     </html>
