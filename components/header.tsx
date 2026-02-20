@@ -11,7 +11,9 @@ export function Header() {
       <SobekLogo />
       <div className="flex items-center gap-2 sm:gap-3">
         <LinkTelegram />
-        <ConnectButton showBalance={false} />
+        <div className="min-h-[40px] min-w-[148px] flex items-center justify-end">
+          <ConnectButton showBalance={false} />
+        </div>
         <SettingsLink />
       </div>
     </header>

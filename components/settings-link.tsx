@@ -4,7 +4,7 @@ export function SettingsLink() {
   return (
     <Link
       href="/settings"
-      className="rounded-full p-2 text-emerald-300/60 hover:text-emerald-300 hover:bg-emerald-950/50 transition-colors"
+      className="rounded-full p-2 text-sobek-green/60 hover:text-sobek-green hover:bg-sobek-forest/50 transition-colors"
       aria-label="Settings"
     >
       <svg

@@ -164,13 +164,13 @@ export default function Home() {
 
       {/* Hero */}
       <div className="mb-16 max-w-lg text-center space-y-4 px-4">
-        <h1 className="text-5xl font-bold tracking-tight text-emerald-400">
+        <h1 className="text-5xl font-bold tracking-tight text-sobek-gold">
           Sobek
         </h1>
-        <p className="text-lg text-emerald-300/60">
+        <p className="text-lg text-sobek-green-light/80">
           Voice-powered task marketplace. Powered by Base, Hedera, and x402.
         </p>
-        <p className="text-sm text-emerald-200/40 leading-relaxed">
+        <p className="text-sm text-sobek-green-light/60 leading-relaxed">
           Create tasks, set a price in USDC, and let task runners compete to
           fulfill them. No account needed — just connect your wallet and pay.
           Every transaction is onchain.
@@ -194,7 +194,7 @@ export default function Home() {
         />
 
         {/* Status */}
-        <p className="text-sm text-emerald-300/50">
+        <p className="text-sm text-sobek-green/50">
           {conversation.status === "disconnected" && "Ready"}
           {isConnecting && "Connecting..."}
           {isConnected &&
@@ -232,20 +232,20 @@ export default function Home() {
         {messages.length > 0 && (
           <div
             ref={transcriptRef}
-            className="w-full max-w-md max-h-64 overflow-y-auto rounded-lg bg-emerald-950/50 border border-emerald-900/30 p-4 space-y-2"
+            className="w-full max-w-md max-h-64 overflow-y-auto rounded-lg bg-sobek-forest/50 border border-sobek-forest/30 p-4 space-y-2"
           >
             {messages.map((msg, i) => (
               <div key={i} className="text-sm">
                 <span
                   className={
                     msg.role === "agent"
-                      ? "text-emerald-400"
-                      : "text-emerald-200/50"
+                      ? "text-sobek-gold"
+                      : "text-sobek-green/50"
                   }
                 >
                   {msg.role === "agent" ? "Sobek" : "You"}:
                 </span>{" "}
-                <span className="text-emerald-100/80">{msg.text}</span>
+                <span className="text-sobek-green/80">{msg.text}</span>
               </div>
             ))}
           </div>

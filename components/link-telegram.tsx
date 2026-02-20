@@ -90,7 +90,7 @@ export function LinkTelegram() {
         title="Click to unlink"
       >
         <TelegramIcon className="size-4 text-[#2AABEE]" />
-        <span className="text-sm text-emerald-300/80">
+        <span className="text-sm text-sobek-green/80">
           @{handle === "linked" ? "connected" : handle}
         </span>
       </Button>
