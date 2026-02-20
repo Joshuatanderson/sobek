@@ -70,7 +70,12 @@ function clipPoly(
 
 const fmt = (n: number) => { const s = n.toFixed(1); return s === "-0.0" ? "0.0" : s; };
 
-function generateViewportCells(vpW: number, vpH: number): string[] {
+// --- Inter-scale groove depth (Fofonjka & Milinkovitch, 2021) ---
+// h_p/h ≈ 0.3 — thin grooves between raised scale plates
+// Each scale gets a per-cell brightness to simulate depth variation
+type CellData = { pts: string; fill: number };
+
+function generateViewportCells(vpW: number, vpH: number): CellData[] {
   const totalW = vpW + PAD * 2 * TARGET_CELL;
   const totalH = vpH + PAD * 2 * TARGET_CELL;
   const totalCols = Math.round(totalW / TARGET_CELL);
@@ -101,7 +106,7 @@ function generateViewportCells(vpW: number, vpH: number): string[] {
 
   const maxCell = Math.max(...colW, ...rowH);
   const reach = maxCell * 2;
-  const cells: string[] = [];
+  const cells: CellData[] = [];
 
   for (let r = 0; r < totalRows; r++) {
     for (let c = 0; c < totalCols; c++) {
@@ -133,7 +138,12 @@ function generateViewportCells(vpW: number, vpH: number): string[] {
       }
 
       if (poly.length < 3) continue;
-      cells.push(poly.map(([x, y]) => `${fmt(x)},${fmt(y)}`).join(" "));
+
+      // Per-cell brightness for depth variation (h_p/h ≈ 0.3)
+      const cellSeed = r * 137 + c * 311 + 42;
+      const fill = 0.008 + rand(cellSeed + 500) * 0.017; // [0.008, 0.025]
+
+      cells.push({ pts: poly.map(([x, y]) => `${fmt(x)},${fmt(y)}`).join(" "), fill });
     }
   }
 
@@ -152,7 +162,7 @@ const RIPPLE_PEAK_OPACITY = 0.9;
 type Ripple = { x: number; y: number; time: number };
 
 export function ScaleBackground() {
-  const [cells, setCells] = useState<string[]>([]);
+  const [cells, setCells] = useState<CellData[]>([]);
   const brightLayerRef = useRef<HTMLDivElement>(null);
   const ripplesRef = useRef<Ripple[]>([]);
   const mouseRef = useRef<{ x: number; y: number }>({ x: -9999, y: -9999 });
@@ -259,12 +269,12 @@ export function ScaleBackground() {
     };
   }, [buildMask]);
 
-  const polygons = (stroke: string, strokeWidth: string) =>
-    cells.map((pts, i) => (
+  const polygons = (stroke: string, strokeWidth: string, fillScale: number) =>
+    cells.map((cell, i) => (
       <polygon
         key={i}
-        points={pts}
-        fill="none"
+        points={cell.pts}
+        fill={`rgba(52,211,153,${(cell.fill * fillScale).toFixed(4)})`}
         stroke={stroke}
         strokeWidth={strokeWidth}
         strokeLinejoin="round"
@@ -274,7 +284,7 @@ export function ScaleBackground() {
   return (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
       <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-        {polygons("rgba(52,211,153,0.07)", "0.5")}
+        {polygons("rgba(52,211,153,0.07)", "0.5", 1)}
       </svg>
 
       <div
@@ -283,7 +293,7 @@ export function ScaleBackground() {
         style={{ maskImage: "linear-gradient(transparent,transparent)", WebkitMaskImage: "linear-gradient(transparent,transparent)" }}
       >
         <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          {polygons("rgba(52,211,153,0.35)", "0.8")}
+          {polygons("rgba(52,211,153,0.35)", "0.8", 5)}
         </svg>
       </div>
 
