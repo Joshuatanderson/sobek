@@ -178,9 +178,9 @@ export default function Home() {
             Built on
           </span>
           <div className="flex items-center gap-5">
-            <Image src="/base-logo.svg" alt="Base" width={28} height={28} className="opacity-70 hover:opacity-100 transition-opacity" />
-            <Image src="/hedera-logo.svg" alt="Hedera" width={24} height={24} className="opacity-70 hover:opacity-100 transition-opacity" />
-            <Image src="/adi-logo.svg" alt="ADI" width={72} height={24} className="opacity-70 hover:opacity-100 transition-opacity" />
+            <Image src="/base-logo.svg" alt="Base" width={28} height={28} className="h-7 w-auto opacity-70 hover:opacity-100 transition-opacity" />
+            <Image src="/hedera-logo.svg" alt="Hedera" width={28} height={28} className="h-7 w-auto opacity-70 hover:opacity-100 transition-opacity" />
+            <Image src="/adi-logo.svg" alt="ADI" width={82} height={28} className="h-7 w-auto opacity-70 hover:opacity-100 transition-opacity" />
           </div>
         </div>
         <p className="text-sm text-sobek-green-light/80 leading-relaxed">

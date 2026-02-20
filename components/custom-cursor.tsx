@@ -63,34 +63,34 @@ export function CustomCursor() {
   }, [visible, state]);
 
   const styles = {
-    default: { w: 18, h: 22, fill: "#cddfc5", stroke: "rgba(0,0,0,0.4)", filter: "none" },
-    hover:   { w: 22, h: 27, fill: "#cddfc5", stroke: "rgba(0,0,0,0.3)", filter: "drop-shadow(0 0 6px rgba(205, 223, 197, 0.5))" },
-    active:  { w: 15, h: 19, fill: "#e2eeda", stroke: "rgba(0,0,0,0.3)", filter: "drop-shadow(0 0 10px rgba(205, 223, 197, 0.6))" },
+    default: { w: 18, h: 22, fill: "#cddfc5", stroke: "rgba(0,0,0,0.4)", filter: "none", vbW: 14, vbH: 21, path: ARROW_PATH },
+    hover:   { w: 26, h: 26, fill: "#cddfc5", stroke: "rgba(0,0,0,0.3)", filter: "drop-shadow(0 0 6px rgba(205, 223, 197, 0.5))", vbW: 12, vbH: 13, path: CLAW_PATH },
+    active:  { w: 22, h: 22, fill: "#e2eeda", stroke: "rgba(0,0,0,0.3)", filter: "drop-shadow(0 0 10px rgba(205, 223, 197, 0.6))", vbW: 12, vbH: 13, path: CLAW_GRAB_PATH },
   }[state];
 
   return (
     <svg
       ref={arrowRef}
       className="fixed top-0 left-0 z-[9999] pointer-events-none"
-      viewBox="0 0 14 21"
+      viewBox={`0 0 ${styles.vbW} ${styles.vbH}`}
       fill="none"
       style={{
         opacity: visible ? 1 : 0,
         width: styles.w,
         height: styles.h,
-        marginLeft: -styles.w * (1 / 14),
-        marginTop: -styles.h * (1 / 21),
+        marginLeft: -styles.w * (1 / styles.vbW),
+        marginTop: -styles.h * (1 / styles.vbH),
         filter: styles.filter,
         transition: "width 0.15s, height 0.15s, margin 0.15s, filter 0.15s, opacity 0.15s",
       }}
     >
       <path
-        d={ARROW_PATH}
+        d={styles.path}
         fill={styles.fill}
         stroke={styles.stroke}
         strokeWidth="1"
         strokeLinejoin="round"
-        style={{ transition: "fill 0.15s" }}
+        style={{ transition: "fill 0.15s, d 0.15s" }}
       />
     </svg>
   );
