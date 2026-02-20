@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typegen": "npx supabase gen types --lang=typescript --project-id rjywhvxntptqwofymgqg > utils/supabase/database.types.ts"
+    "typegen": "npx supabase gen types --lang=typescript --project-id rjywhvxntptqwofymgqg > utils/supabase/database.types.ts",
+    "generate-scales": "npx tsx scripts/generate-scales.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",

@@ -1,154 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from "react";
-
-// --- Voronoi-based crocodile scale pattern ---
-// Viewport-sized generation (no tiling) for seamless coverage
-// Random polygonal domains matching crocodilian head scale geometry
-// (Milinkovitch et al., Science 2013 — Lewis's Law, Aboav-Weaire statistics)
-// Size distribution from fragmentation mechanics (Qin, Pugno & Buehler, 2014)
-// L(ε) = L∞ + 2γ / [E(1-ν²)(εᵅ - εfᵅ)]
-
-const TARGET_CELL = 22; // average cell size in px
-const JITTER = 0.45;
-const PAD = 3; // extra rows/cols beyond viewport for correct edge cells
-
-function rand(seed: number): number {
-  const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
-  return x - Math.floor(x);
-}
-
-// --- Fragmentation size model (Qin et al., 2014, Scientific Reports) ---
-const FRAG_ALPHA = 2.4;
-const FRAG_EPS_F = 0.05;
-const FRAG_EPS_F_A = Math.pow(FRAG_EPS_F, FRAG_ALPHA);
-const FRAG_C = 0.4 * (Math.pow(0.15, FRAG_ALPHA) - FRAG_EPS_F_A);
-const FRAG_L_INF = 0.6;
-
-function fragmentSize(strain: number): number {
-  const ea = Math.pow(Math.max(strain, FRAG_EPS_F + 0.001), FRAG_ALPHA);
-  return FRAG_L_INF + FRAG_C / (ea - FRAG_EPS_F_A);
-}
-
-function variableSpacing(count: number, total: number, seedBase: number): number[] {
-  const sizes = Array.from({ length: count }, (_, i) => {
-    const strain = 0.06 + rand(seedBase + i * 7) * 0.24;
-    return fragmentSize(strain);
-  });
-  const sum = sizes.reduce((a, b) => a + b, 0);
-  return sizes.map(s => (s / sum) * total);
-}
-
-type Point = { x: number; y: number };
-
-// Sutherland-Hodgman: keep side where dot(v - o, n) <= 0
-function clipPoly(
-  poly: [number, number][],
-  ox: number, oy: number,
-  nx: number, ny: number
-): [number, number][] {
-  if (poly.length < 3) return [];
-  const out: [number, number][] = [];
-  for (let i = 0; i < poly.length; i++) {
-    const a = poly[i];
-    const b = poly[(i + 1) % poly.length];
-    const da = (a[0] - ox) * nx + (a[1] - oy) * ny;
-    const db = (b[0] - ox) * nx + (b[1] - oy) * ny;
-    if (da <= 0) {
-      out.push(a);
-      if (db > 0) {
-        const t = da / (da - db);
-        out.push([a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])]);
-      }
-    } else if (db <= 0) {
-      const t = da / (da - db);
-      out.push([a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])]);
-    }
-  }
-  return out;
-}
-
-const fmt = (n: number) => { const s = n.toFixed(1); return s === "-0.0" ? "0.0" : s; };
-
-// --- Inter-scale groove depth (Fofonjka & Milinkovitch, 2021) ---
-// h_p/h ≈ 0.3 — thin grooves between raised scale plates
-// Each scale gets a per-cell brightness to simulate depth variation
-type CellData = { pts: string; fill: number };
-
-function generateViewportCells(vpW: number, vpH: number): CellData[] {
-  const totalW = vpW + PAD * 2 * TARGET_CELL;
-  const totalH = vpH + PAD * 2 * TARGET_CELL;
-  const totalCols = Math.round(totalW / TARGET_CELL);
-  const totalRows = Math.round(totalH / TARGET_CELL);
-
-  const colW = variableSpacing(totalCols, totalW, 1000);
-  const rowH = variableSpacing(totalRows, totalH, 2000);
-
-  // Cumulative centers, offset so padding cols/rows are off-screen
-  const padOffX = colW.slice(0, PAD).reduce((a, b) => a + b, 0);
-  const padOffY = rowH.slice(0, PAD).reduce((a, b) => a + b, 0);
-
-  const colCenters: number[] = [];
-  { let x = -padOffX; for (let c = 0; c < totalCols; c++) { colCenters.push(x + colW[c] / 2); x += colW[c]; } }
-  const rowCenters: number[] = [];
-  { let y = -padOffY; for (let r = 0; r < totalRows; r++) { rowCenters.push(y + rowH[r] / 2); y += rowH[r]; } }
-
-  // Generate jittered points
-  const points: Point[] = [];
-  for (let r = 0; r < totalRows; r++) {
-    for (let c = 0; c < totalCols; c++) {
-      const seed = r * 137 + c * 311 + 42;
-      const jx = (rand(seed) - 0.5) * colW[c] * JITTER * 2;
-      const jy = (rand(seed + 1) - 0.5) * rowH[r] * JITTER * 2;
-      points.push({ x: colCenters[c] + jx, y: rowCenters[r] + jy });
-    }
-  }
-
-  const maxCell = Math.max(...colW, ...rowH);
-  const reach = maxCell * 2;
-  const cells: CellData[] = [];
-
-  for (let r = 0; r < totalRows; r++) {
-    for (let c = 0; c < totalCols; c++) {
-      const p = points[r * totalCols + c];
-
-      // Skip cells too far outside viewport
-      if (p.x < -reach || p.x > vpW + reach) continue;
-      if (p.y < -reach || p.y > vpH + reach) continue;
-
-      let poly: [number, number][] = [
-        [p.x - reach, p.y - reach],
-        [p.x + reach, p.y - reach],
-        [p.x + reach, p.y + reach],
-        [p.x - reach, p.y + reach],
-      ];
-
-      // Clip against grid neighbors (±3 rows/cols)
-      outer:
-      for (let dr = -3; dr <= 3; dr++) {
-        for (let dc = -3; dc <= 3; dc++) {
-          if (dr === 0 && dc === 0) continue;
-          const nr = r + dr;
-          const nc = c + dc;
-          if (nr < 0 || nr >= totalRows || nc < 0 || nc >= totalCols) continue;
-          const q = points[nr * totalCols + nc];
-          poly = clipPoly(poly, (p.x + q.x) / 2, (p.y + q.y) / 2, q.x - p.x, q.y - p.y);
-          if (poly.length < 3) break outer;
-        }
-      }
-
-      if (poly.length < 3) continue;
-
-      // Per-cell brightness for depth variation (h_p/h ≈ 0.3)
-      const cellSeed = r * 137 + c * 311 + 42;
-      const fill = 0.008 + rand(cellSeed + 500) * 0.017; // [0.008, 0.025]
-
-      cells.push({ pts: poly.map(([x, y]) => `${fmt(x)},${fmt(y)}`).join(" "), fill });
-    }
-  }
-
-  return cells;
-}
+import { useEffect, useRef, useCallback } from "react";
+import { dimPolygons, brightPolygons } from "./scale-cells";
 
 // Hover + ripple constants
 const HOVER_RADIUS = 120;
@@ -162,34 +15,10 @@ const RIPPLE_PEAK_OPACITY = 0.9;
 type Ripple = { x: number; y: number; time: number };
 
 export function ScaleBackground() {
-  const [cells, setCells] = useState<CellData[]>([]);
   const brightLayerRef = useRef<HTMLDivElement>(null);
   const ripplesRef = useRef<Ripple[]>([]);
   const mouseRef = useRef<{ x: number; y: number }>({ x: -9999, y: -9999 });
   const rafRef = useRef<number>(0);
-
-  // Generate cells for viewport on mount
-  useEffect(() => {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    setCells(generateViewportCells(w, h));
-
-    let genW = w;
-    let genH = h;
-    const onResize = () => {
-      const nw = window.innerWidth;
-      const nh = window.innerHeight;
-      // Only recompute if viewport grew significantly past what we generated
-      if (nw > genW + 200 || nh > genH + 200) {
-        genW = nw;
-        genH = nh;
-        setCells(generateViewportCells(nw, nh));
-      }
-    };
-
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
 
   const buildMask = useCallback((now: number) => {
     const el = brightLayerRef.current;
@@ -269,32 +98,24 @@ export function ScaleBackground() {
     };
   }, [buildMask]);
 
-  const polygons = (stroke: string, strokeWidth: string, fillScale: number) =>
-    cells.map((cell, i) => (
-      <polygon
-        key={i}
-        points={cell.pts}
-        fill={`rgba(52,211,153,${(cell.fill * fillScale).toFixed(4)})`}
-        stroke={stroke}
-        strokeWidth={strokeWidth}
-        strokeLinejoin="round"
-      />
-    ));
-
   return (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-      <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-        {polygons("rgba(52,211,153,0.07)", "0.5", 1)}
-      </svg>
+      <svg
+        className="absolute inset-0 w-full h-full"
+        xmlns="http://www.w3.org/2000/svg"
+        dangerouslySetInnerHTML={{ __html: dimPolygons }}
+      />
 
       <div
         ref={brightLayerRef}
         className="absolute inset-0 w-full h-full"
         style={{ maskImage: "linear-gradient(transparent,transparent)", WebkitMaskImage: "linear-gradient(transparent,transparent)" }}
       >
-        <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          {polygons("rgba(52,211,153,0.35)", "0.8", 5)}
-        </svg>
+        <svg
+          className="absolute inset-0 w-full h-full"
+          xmlns="http://www.w3.org/2000/svg"
+          dangerouslySetInnerHTML={{ __html: brightPolygons }}
+        />
       </div>
 
       <PerlinBreath />
