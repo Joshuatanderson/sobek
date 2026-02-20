@@ -81,17 +81,19 @@ export function LinkTelegram() {
 
   if (handle) {
     return (
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={handleUnlink}
         disabled={loading}
-        className="flex items-center gap-2 rounded-full px-3 py-1.5 hover:bg-white/10 transition-colors disabled:opacity-50"
+        className="rounded-full gap-2"
         title="Click to unlink"
       >
         <TelegramIcon className="size-4 text-[#2AABEE]" />
         <span className="text-sm text-emerald-300/80">
           @{handle === "linked" ? "connected" : handle}
         </span>
-      </button>
+      </Button>
     );
   }
 

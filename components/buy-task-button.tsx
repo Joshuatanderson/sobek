@@ -3,16 +3,19 @@
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseUnits } from "viem";
 import { erc20Abi } from "viem";
-import { BASE_USDC_ADDRESS, SOBEK_WALLET_ADDRESS } from "@/config/constants";
+import { BASE_USDC_ADDRESS } from "@/config/constants";
 import { createOrder } from "@/app/task/actions";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export function BuyTaskButton({
   taskId,
   priceUsdc,
+  recipientAddress,
 }: {
   taskId: string;
   priceUsdc: number;
+  recipientAddress: `0x${string}`;
 }) {
   const { isConnected } = useAccount();
   const [status, setStatus] = useState<"idle" | "confirming" | "submitting" | "success" | "error">("idle");
@@ -69,7 +72,7 @@ export function BuyTaskButton({
       address: BASE_USDC_ADDRESS,
       abi: erc20Abi,
       functionName: "transfer",
-      args: [SOBEK_WALLET_ADDRESS, parseUnits(priceUsdc.toString(), 6)],
+      args: [recipientAddress, parseUnits(priceUsdc.toString(), 6)],
     });
   }
 
@@ -86,12 +89,9 @@ export function BuyTaskButton({
   if (status === "error") {
     return (
       <div className="flex flex-col gap-1">
-        <button
-          onClick={handleBuy}
-          className="rounded bg-emerald-600 px-3 py-1 text-sm font-medium text-white hover:bg-emerald-500 transition-colors"
-        >
+        <Button size="sm" onClick={handleBuy}>
           Retry
-        </button>
+        </Button>
         <span className="text-red-400 text-xs max-w-[120px] truncate" title={errorMsg}>
           {errorMsg}
         </span>
@@ -102,14 +102,10 @@ export function BuyTaskButton({
   const isLoading = status === "confirming" || status === "submitting" || isWritePending;
 
   return (
-    <button
-      onClick={handleBuy}
-      disabled={isLoading}
-      className="rounded bg-emerald-600 px-3 py-1 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-    >
+    <Button size="sm" onClick={handleBuy} disabled={isLoading}>
       {status === "confirming" && "Confirm in wallet..."}
       {status === "submitting" && "Creating order..."}
       {status === "idle" && `Buy $${priceUsdc.toFixed(2)}`}
-    </button>
+    </Button>
   );
 }

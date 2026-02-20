@@ -103,21 +103,19 @@ export default function Home() {
         </p>
 
         {/* Button */}
-        <button
+        <Button
           onClick={isConnected ? handleEnd : handleStart}
           disabled={isConnecting}
-          className={`rounded-full px-8 py-3 text-sm font-medium transition-all ${
-            isConnected
-              ? "bg-red-600 hover:bg-red-700"
-              : "bg-emerald-600 hover:bg-emerald-700"
-          } disabled:opacity-50`}
+          variant={isConnected ? "destructive" : "default"}
+          size="lg"
+          className="rounded-full px-8"
         >
           {isConnecting
             ? "Connecting..."
             : isConnected
               ? "End Call"
               : "Start Call"}
-        </button>
+        </Button>
 
         {/* Transcript */}
         {messages.length > 0 && (

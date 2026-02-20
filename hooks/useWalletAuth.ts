@@ -15,6 +15,21 @@ export function useWalletAuth() {
     prevAddress.current = address;
 
     (async () => {
+      // Skip sign-in if we already have a valid session
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session) {
+        // Still upsert last_seen_at
+        await supabase.from("users").upsert(
+          {
+            id: sessionData.session.user.id,
+            wallet_address: address,
+            last_seen_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        );
+        return;
+      }
+
       const { data, error } = await supabase.auth.signInWithWeb3({
         chain: "ethereum",
         statement: "Sign in to Sobek",

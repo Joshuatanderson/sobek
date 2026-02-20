@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { createClient } from "@/utils/supabase/client";
+import { Button } from "@/components/ui/button";
 
 const supabase = createClient();
 
@@ -70,9 +71,9 @@ export function TelegramDebug() {
     <div className="fixed bottom-4 right-4 w-96 rounded-lg bg-gray-900 border border-emerald-900/50 p-4 text-xs font-mono text-emerald-200/80 space-y-3 z-50">
       <div className="flex items-center justify-between">
         <span className="text-emerald-400 font-bold text-sm">Telegram Debug</span>
-        <button onClick={() => { fetchWebhookInfo(); fetchUserRow(); }} className="text-emerald-500 hover:text-emerald-300">
+        <Button variant="link" size="xs" onClick={() => { fetchWebhookInfo(); fetchUserRow(); }} className="text-emerald-500 hover:text-emerald-300">
           refresh
-        </button>
+        </Button>
       </div>
 
       <div className="space-y-1">
@@ -82,13 +83,9 @@ export function TelegramDebug() {
         ) : (
           <div className="space-y-1">
             <div className="text-red-400">Not configured</div>
-            <button
-              onClick={handleSetWebhook}
-              disabled={settingWebhook}
-              className="px-2 py-1 bg-emerald-700 hover:bg-emerald-600 rounded text-white disabled:opacity-50"
-            >
+            <Button size="xs" onClick={handleSetWebhook} disabled={settingWebhook}>
               {settingWebhook ? "Setting..." : "Register webhook now"}
-            </button>
+            </Button>
           </div>
         )}
         {webhookInfo && (
