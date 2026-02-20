@@ -102,10 +102,7 @@ const config: HardhatUserConfig = {
     browserUrl: "https://repo.sourcify.dev",
   },
   etherscan: {
-    apiKey: {
-      base: vars.get("BASE_API_KEY", ""),
-      baseSepolia: vars.get("BASE_API_KEY", ""),
-    },
+    apiKey: vars.get("BASE_API_KEY", ""),
     customChains: [
       {
         network: "base",
