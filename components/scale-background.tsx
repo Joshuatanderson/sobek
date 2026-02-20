@@ -1,64 +1,185 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 
-// Alligator-scale pattern: offset rows of irregular rounded-rectangular shapes
-// Real croc scales are wider than tall, arranged in a brick-like offset pattern
-// with organic edges and varied sizing
+// --- Voronoi-based crocodile scale pattern ---
+// Viewport-sized generation (no tiling) for seamless coverage
+// Random polygonal domains matching crocodilian head scale geometry
+// (Milinkovitch et al., Science 2013 — Lewis's Law, Aboav-Weaire statistics)
+// Size distribution from fragmentation mechanics (Qin, Pugno & Buehler, 2014)
+// L(ε) = L∞ + 2γ / [E(1-ν²)(εᵅ - εfᵅ)]
 
-const TILE_W = 48;
-const TILE_H = 40;
+const TARGET_CELL = 22; // average cell size in px
+const JITTER = 0.45;
+const PAD = 3; // extra rows/cols beyond viewport for correct edge cells
 
 function rand(seed: number): number {
   const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
   return x - Math.floor(x);
 }
 
-// Generate an irregular, roughly rectangular scale shape with organic edges
-// Uses 8 vertices around a rect for natural waviness
-function scaleShape(cx: number, cy: number, hw: number, hh: number, seed: number): string {
-  const pts: [number, number][] = [];
-  // Walk around a rectangle: top-left → top-right → bottom-right → bottom-left
-  // with 2 points per edge for organic curvature
-  const corners: [number, number][] = [
-    [-hw, -hh], [0, -hh], [hw, -hh],  // top edge (3 pts)
-    [hw, 0],                            // right mid
-    [hw, hh], [0, hh], [-hw, hh],      // bottom edge (3 pts)
-    [-hw, 0],                           // left mid
-  ];
+// --- Fragmentation size model (Qin et al., 2014, Scientific Reports) ---
+const FRAG_ALPHA = 2.4;
+const FRAG_EPS_F = 0.05;
+const FRAG_EPS_F_A = Math.pow(FRAG_EPS_F, FRAG_ALPHA);
+const FRAG_C = 0.4 * (Math.pow(0.15, FRAG_ALPHA) - FRAG_EPS_F_A);
+const FRAG_L_INF = 0.6;
 
-  for (let i = 0; i < corners.length; i++) {
-    const jx = (rand(seed + i * 3.7) - 0.5) * 2.5;
-    const jy = (rand(seed + i * 5.3) - 0.5) * 2.5;
-    pts.push([cx + corners[i][0] + jx, cy + corners[i][1] + jy]);
-  }
-
-  return pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+function fragmentSize(strain: number): number {
+  const ea = Math.pow(Math.max(strain, FRAG_EPS_F + 0.001), FRAG_ALPHA);
+  return FRAG_L_INF + FRAG_C / (ea - FRAG_EPS_F_A);
 }
 
+function variableSpacing(count: number, total: number, seedBase: number): number[] {
+  const sizes = Array.from({ length: count }, (_, i) => {
+    const strain = 0.06 + rand(seedBase + i * 7) * 0.24;
+    return fragmentSize(strain);
+  });
+  const sum = sizes.reduce((a, b) => a + b, 0);
+  return sizes.map(s => (s / sum) * total);
+}
+
+type Point = { x: number; y: number };
+
+// Sutherland-Hodgman: keep side where dot(v - o, n) <= 0
+function clipPoly(
+  poly: [number, number][],
+  ox: number, oy: number,
+  nx: number, ny: number
+): [number, number][] {
+  if (poly.length < 3) return [];
+  const out: [number, number][] = [];
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % poly.length];
+    const da = (a[0] - ox) * nx + (a[1] - oy) * ny;
+    const db = (b[0] - ox) * nx + (b[1] - oy) * ny;
+    if (da <= 0) {
+      out.push(a);
+      if (db > 0) {
+        const t = da / (da - db);
+        out.push([a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])]);
+      }
+    } else if (db <= 0) {
+      const t = da / (da - db);
+      out.push([a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])]);
+    }
+  }
+  return out;
+}
+
+const fmt = (n: number) => { const s = n.toFixed(1); return s === "-0.0" ? "0.0" : s; };
+
+function generateViewportCells(vpW: number, vpH: number): string[] {
+  const totalW = vpW + PAD * 2 * TARGET_CELL;
+  const totalH = vpH + PAD * 2 * TARGET_CELL;
+  const totalCols = Math.round(totalW / TARGET_CELL);
+  const totalRows = Math.round(totalH / TARGET_CELL);
+
+  const colW = variableSpacing(totalCols, totalW, 1000);
+  const rowH = variableSpacing(totalRows, totalH, 2000);
+
+  // Cumulative centers, offset so padding cols/rows are off-screen
+  const padOffX = colW.slice(0, PAD).reduce((a, b) => a + b, 0);
+  const padOffY = rowH.slice(0, PAD).reduce((a, b) => a + b, 0);
+
+  const colCenters: number[] = [];
+  { let x = -padOffX; for (let c = 0; c < totalCols; c++) { colCenters.push(x + colW[c] / 2); x += colW[c]; } }
+  const rowCenters: number[] = [];
+  { let y = -padOffY; for (let r = 0; r < totalRows; r++) { rowCenters.push(y + rowH[r] / 2); y += rowH[r]; } }
+
+  // Generate jittered points
+  const points: Point[] = [];
+  for (let r = 0; r < totalRows; r++) {
+    for (let c = 0; c < totalCols; c++) {
+      const seed = r * 137 + c * 311 + 42;
+      const jx = (rand(seed) - 0.5) * colW[c] * JITTER * 2;
+      const jy = (rand(seed + 1) - 0.5) * rowH[r] * JITTER * 2;
+      points.push({ x: colCenters[c] + jx, y: rowCenters[r] + jy });
+    }
+  }
+
+  const maxCell = Math.max(...colW, ...rowH);
+  const reach = maxCell * 2;
+  const cells: string[] = [];
+
+  for (let r = 0; r < totalRows; r++) {
+    for (let c = 0; c < totalCols; c++) {
+      const p = points[r * totalCols + c];
+
+      // Skip cells too far outside viewport
+      if (p.x < -reach || p.x > vpW + reach) continue;
+      if (p.y < -reach || p.y > vpH + reach) continue;
+
+      let poly: [number, number][] = [
+        [p.x - reach, p.y - reach],
+        [p.x + reach, p.y - reach],
+        [p.x + reach, p.y + reach],
+        [p.x - reach, p.y + reach],
+      ];
+
+      // Clip against grid neighbors (±3 rows/cols)
+      outer:
+      for (let dr = -3; dr <= 3; dr++) {
+        for (let dc = -3; dc <= 3; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          const nr = r + dr;
+          const nc = c + dc;
+          if (nr < 0 || nr >= totalRows || nc < 0 || nc >= totalCols) continue;
+          const q = points[nr * totalCols + nc];
+          poly = clipPoly(poly, (p.x + q.x) / 2, (p.y + q.y) / 2, q.x - p.x, q.y - p.y);
+          if (poly.length < 3) break outer;
+        }
+      }
+
+      if (poly.length < 3) continue;
+      cells.push(poly.map(([x, y]) => `${fmt(x)},${fmt(y)}`).join(" "));
+    }
+  }
+
+  return cells;
+}
+
+// Hover + ripple constants
+const HOVER_RADIUS = 120;
+const HOVER_OPACITY = 0.5;
+const RIPPLE_SPEED = 0.3;
+const RIPPLE_RING_WIDTH = 50;
+const RIPPLE_FADE_WIDTH = 30;
+const RIPPLE_DURATION = 1200;
+const RIPPLE_PEAK_OPACITY = 0.9;
+
+type Ripple = { x: number; y: number; time: number };
+
 export function ScaleBackground() {
+  const [cells, setCells] = useState<string[]>([]);
   const brightLayerRef = useRef<HTMLDivElement>(null);
   const ripplesRef = useRef<Ripple[]>([]);
   const mouseRef = useRef<{ x: number; y: number }>({ x: -9999, y: -9999 });
   const rafRef = useRef<number>(0);
 
-  // Brick-pattern layout: 4 scales per tile
-  // Row 0: two scales side by side
-  // Row 1: two scales offset by half a cell width (brick pattern)
-  const cellW = TILE_W / 2; // 24
-  const cellH = TILE_H / 2; // 20
-  const hw = 10; // half-width of scale shape
-  const hh = 7;  // half-height — wider than tall, like real scales
+  // Generate cells for viewport on mount
+  useEffect(() => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    setCells(generateViewportCells(w, h));
 
-  const scales = [
-    // Row 0
-    scaleShape(cellW * 0.5, cellH * 0.5, hw + rand(1) * 1.5, hh + rand(2) * 1, 1),
-    scaleShape(cellW * 1.5, cellH * 0.5, hw + rand(3) * 1.5, hh + rand(4) * 1, 2),
-    // Row 1 (offset half a cell)
-    scaleShape(0, cellH * 1.5, hw + rand(5) * 1.5, hh + rand(6) * 1, 3),
-    scaleShape(cellW, cellH * 1.5, hw + rand(7) * 1.5, hh + rand(8) * 1, 4),
-    scaleShape(TILE_W, cellH * 1.5, hw + rand(9) * 1.5, hh + rand(10) * 1, 5),
-  ];
+    let genW = w;
+    let genH = h;
+    const onResize = () => {
+      const nw = window.innerWidth;
+      const nh = window.innerHeight;
+      // Only recompute if viewport grew significantly past what we generated
+      if (nw > genW + 200 || nh > genH + 200) {
+        genW = nw;
+        genH = nh;
+        setCells(generateViewportCells(nw, nh));
+      }
+    };
+
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const buildMask = useCallback((now: number) => {
     const el = brightLayerRef.current;
@@ -67,21 +188,18 @@ export function ScaleBackground() {
     const ripples = ripplesRef.current;
     const mouse = mouseRef.current;
 
-    // Expire old ripples
     while (ripples.length > 0 && now - ripples[0].time > RIPPLE_DURATION) {
       ripples.shift();
     }
 
     const gradients: string[] = [];
 
-    // Hover glow: soft radial spot following cursor
     if (mouse.x > -9000) {
       gradients.push(
         `radial-gradient(circle at ${mouse.x}px ${mouse.y}px, rgba(255,255,255,${HOVER_OPACITY}) 0px, rgba(255,255,255,${HOVER_OPACITY * 0.5}) ${HOVER_RADIUS * 0.5}px, transparent ${HOVER_RADIUS}px)`
       );
     }
 
-    // Click ripples
     for (const rip of ripples) {
       const elapsed = now - rip.time;
       const progress = elapsed / RIPPLE_DURATION;
@@ -141,47 +259,31 @@ export function ScaleBackground() {
     };
   }, [buildMask]);
 
-  const scalePolygons = (id: string, stroke: string, strokeWidth: string) => (
-    <pattern
-      id={id}
-      width={TILE_W}
-      height={TILE_H}
-      patternUnits="userSpaceOnUse"
-    >
-      {scales.map((pts, i) => (
-        <polygon
-          key={i}
-          points={pts}
-          fill="none"
-          stroke={stroke}
-          strokeWidth={strokeWidth}
-          strokeLinejoin="round"
-        />
-      ))}
-    </pattern>
-  );
+  const polygons = (stroke: string, strokeWidth: string) =>
+    cells.map((pts, i) => (
+      <polygon
+        key={i}
+        points={pts}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeLinejoin="round"
+      />
+    ));
 
   return (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-      {/* Dim base scale pattern */}
       <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          {scalePolygons("scales", "rgba(52,211,153,0.07)", "0.5")}
-        </defs>
-        <rect width="100%" height="100%" fill="url(#scales)" />
+        {polygons("rgba(52,211,153,0.07)", "0.5")}
       </svg>
 
-      {/* Bright scale pattern — revealed by ripple mask */}
       <div
         ref={brightLayerRef}
         className="absolute inset-0 w-full h-full"
         style={{ maskImage: "linear-gradient(transparent,transparent)", WebkitMaskImage: "linear-gradient(transparent,transparent)" }}
       >
         <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            {scalePolygons("scales-bright", "rgba(52,211,153,0.35)", "0.8")}
-          </defs>
-          <rect width="100%" height="100%" fill="url(#scales-bright)" />
+          {polygons("rgba(52,211,153,0.35)", "0.8")}
         </svg>
       </div>
 
@@ -191,12 +293,10 @@ export function ScaleBackground() {
 }
 
 // --- 2D gradient noise (simplified Perlin) ---
-// Permutation table for hashing grid coordinates
 const PERM = new Uint8Array(512);
 {
   const p = new Uint8Array(256);
   for (let i = 0; i < 256; i++) p[i] = i;
-  // Fisher-Yates shuffle with fixed seed
   let s = 42;
   for (let i = 255; i > 0; i--) {
     s = (s * 16807 + 0) % 2147483647;
@@ -206,7 +306,6 @@ const PERM = new Uint8Array(512);
   for (let i = 0; i < 512; i++) PERM[i] = p[i & 255];
 }
 
-// 12 gradient directions for 2D
 const GRAD = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]];
 
 function fade(t: number) { return t * t * t * (t * (t * 6 - 15) + 10); }
@@ -234,7 +333,6 @@ function noise2d(x: number, y: number): number {
   );
 }
 
-// Fractal Brownian Motion — layers of noise at increasing frequency
 function fbm(x: number, y: number, octaves: number): number {
   let value = 0;
   let amp = 0.5;
@@ -244,22 +342,10 @@ function fbm(x: number, y: number, octaves: number): number {
     amp *= 0.5;
     freq *= 2.0;
   }
-  return value; // roughly -1..1
+  return value;
 }
 
-// Canvas-based organic light field using fractal noise
 const CANVAS_SCALE = 8;
-
-// Hover + ripple constants for bright scale layer
-const HOVER_RADIUS = 120; // px
-const HOVER_OPACITY = 0.5;
-const RIPPLE_SPEED = 0.3; // px/ms
-const RIPPLE_RING_WIDTH = 50; // px
-const RIPPLE_FADE_WIDTH = 30; // px soft edges
-const RIPPLE_DURATION = 1200; // ms
-const RIPPLE_PEAK_OPACITY = 0.9;
-
-type Ripple = { x: number; y: number; time: number };
 
 function PerlinBreath() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
