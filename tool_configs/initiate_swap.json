@@ -1,0 +1,30 @@
+{
+    "name": "initiate_swap",
+    "description": "Swaps one token for another using Uniswap on Base. Call this when the user wants to swap, trade, or exchange tokens. The user must have a connected wallet. This triggers wallet popups for approval and signing.",
+    "type": "client",
+    "expects_response": true,
+    "response_timeout_secs": 120,
+    "execution_mode": "post_tool_speech",
+    "force_pre_tool_speech": true,
+    "parameters": {
+        "type": "object",
+        "required": ["tokenIn", "tokenOut", "amount"],
+        "description": "Parameters for initiating a token swap",
+        "properties": {
+            "tokenIn": {
+                "type": "string",
+                "enum": ["USDC", "ETH", "WETH"],
+                "description": "The token to swap from"
+            },
+            "tokenOut": {
+                "type": "string",
+                "enum": ["USDC", "ETH", "WETH"],
+                "description": "The token to swap to"
+            },
+            "amount": {
+                "type": "string",
+                "description": "The amount of tokenIn to swap (e.g. '10' for 10 USDC)"
+            }
+        }
+    }
+}

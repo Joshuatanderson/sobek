@@ -17,6 +17,7 @@ export const env = new Proxy(
     TELEGRAM_WEBHOOK_SECRET: "TELEGRAM_WEBHOOK_SECRET",
     TELEGRAM_BOT_USERNAME: "NEXT_PUBLIC_TELEGRAM_BOT_USERNAME",
     WALLETCONNECT_PROJECT_ID: "NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID",
+    UNISWAP_API_KEY: "UNISWAP_API_KEY",
   } as const,
   {
     get(target, prop: string) {
@@ -33,4 +34,5 @@ export const env = new Proxy(
   readonly TELEGRAM_WEBHOOK_SECRET: string;
   readonly TELEGRAM_BOT_USERNAME: string;
   readonly WALLETCONNECT_PROJECT_ID: string;
+  readonly UNISWAP_API_KEY: string;
 };

@@ -4,6 +4,11 @@
             "type": "client",
             "config": "tool_configs/get_tasks.json",
             "id": "tool_7001khwk0ms2ebprhzfytvjpmwbf"
+        },
+        {
+            "type": "client",
+            "config": "tool_configs/initiate_swap.json",
+            "id": "tool_8601khyd61akemjvr311w07svpxc"
         }
     ]
 }

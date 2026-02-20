@@ -16,10 +16,12 @@ import {
   writeContract,
   sendTransaction,
   waitForTransactionReceipt,
+  signTypedData,
 } from "@wagmi/core";
-import { parseUnits, parseEther, erc20Abi } from "viem";
+import { parseUnits, parseEther, formatUnits, erc20Abi } from "viem";
 import { wagmiConfig } from "@/config/wagmi";
 import { BASE_USDC_ADDRESS, ETH_USD_PRICE } from "@/config/constants";
+import { SUPPORTED_TOKENS } from "@/config/tokens";
 import { createOrder } from "@/app/task/actions";
 
 
@@ -119,6 +121,109 @@ export default function Home() {
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message.split("\n")[0] : "Unknown error";
           return `Payment failed: ${message}. The user may have rejected the transaction or there was a network issue.`;
+        }
+      },
+      initiate_swap: async ({ tokenIn, tokenOut, amount }: { tokenIn: string; tokenOut: string; amount: string }) => {
+        try {
+          const account = getAccount(wagmiConfig);
+          if (!account.isConnected || !account.address) {
+            return "The user's wallet is not connected. Please ask them to connect their wallet first.";
+          }
+
+          const inToken = SUPPORTED_TOKENS[tokenIn.toUpperCase()];
+          const outToken = SUPPORTED_TOKENS[tokenOut.toUpperCase()];
+          if (!inToken || !outToken) {
+            return `Unsupported token. Supported tokens: ${Object.keys(SUPPORTED_TOKENS).join(", ")}`;
+          }
+          if (inToken.symbol === outToken.symbol) {
+            return "Cannot swap a token for itself.";
+          }
+
+          const amountRaw = parseUnits(amount, inToken.decimals).toString();
+
+          // 1. Get quote
+          const quoteRes = await fetch("/api/swap/quote", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              tokenIn: inToken.address,
+              tokenOut: outToken.address,
+              tokenInChainId: 8453,
+              tokenOutChainId: 8453,
+              amount: amountRaw,
+              swapper: account.address,
+              type: "EXACT_INPUT",
+            }),
+          });
+          const quote = await quoteRes.json();
+          if (!quoteRes.ok) {
+            return `Failed to get swap quote: ${quote.detail || quote.errorCode || "Unknown error"}`;
+          }
+
+          // 2. Check approval (skip for native ETH)
+          if (inToken.address !== "0x0000000000000000000000000000000000000000") {
+            const approvalRes = await fetch("/api/swap/check-approval", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                token: inToken.address,
+                amount: amountRaw,
+                walletAddress: account.address,
+                chainId: 8453,
+              }),
+            });
+            const approvalData = await approvalRes.json();
+
+            if (approvalData.approval) {
+              const approvalTx = await sendTransaction(wagmiConfig, {
+                to: approvalData.approval.to as `0x${string}`,
+                data: approvalData.approval.data as `0x${string}`,
+                value: BigInt(approvalData.approval.value || "0"),
+              });
+              await waitForTransactionReceipt(wagmiConfig, { hash: approvalTx });
+            }
+          }
+
+          // 3. Sign Permit2 if needed
+          let signature: string | undefined;
+          if (quote.permitData) {
+            const { domain, types, values } = quote.permitData;
+            signature = await signTypedData(wagmiConfig, {
+              domain,
+              types,
+              primaryType: "PermitSingle",
+              message: values,
+            });
+          }
+
+          // 4. Execute swap
+          const executeRes = await fetch("/api/swap/execute", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              quote: quote.quote,
+              permitData: quote.permitData || undefined,
+              signature: signature || undefined,
+            }),
+          });
+          const swapData = await executeRes.json();
+          if (!executeRes.ok) {
+            return `Swap execution failed: ${swapData.detail || swapData.errorCode || "Unknown error"}`;
+          }
+
+          // 5. Send the swap transaction
+          const txHash = await sendTransaction(wagmiConfig, {
+            to: swapData.swap.to as `0x${string}`,
+            data: swapData.swap.data as `0x${string}`,
+            value: BigInt(swapData.swap.value || "0"),
+          });
+          await waitForTransactionReceipt(wagmiConfig, { hash: txHash });
+
+          const outAmount = formatUnits(BigInt(quote.quote.outputAmount || quote.quote.output?.amount || "0"), outToken.decimals);
+          return `Swap successful! Swapped ${amount} ${inToken.symbol} for ~${parseFloat(outAmount).toFixed(6)} ${outToken.symbol}. Transaction hash: ${txHash}`;
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message.split("\n")[0] : "Unknown error";
+          return `Swap failed: ${message}. The user may have rejected the transaction or there was a network issue.`;
         }
       },
     },
