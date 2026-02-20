@@ -153,6 +153,7 @@ export default function Home() {
               amount: amountRaw,
               swapper: account.address,
               type: "EXACT_INPUT",
+              slippageTolerance: 0.5,
             }),
           });
           const quote = await quoteRes.json();
