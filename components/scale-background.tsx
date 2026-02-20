@@ -183,7 +183,7 @@ function PerlinBreath() {
 
           // Map from [-1,1] to [0,1], then apply power curve for contrast
           const v = Math.max(0, (n + 1) * 0.5);
-          const alpha = v * v * 0.06;
+          const alpha = v * v * 0.08;
 
           const i = (y * w + x) * 4;
           d[i] = 52;
