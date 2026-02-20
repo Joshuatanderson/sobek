@@ -30,7 +30,7 @@ export default async function main(hre: HardhatRuntimeEnvironment) {
   const wallet = new Wallet(PRIVATE_KEY);
   const deployer = new Deployer(hre, wallet);
 
-  const cobie = ["0x4Cbe68d825d21cB4978F56815613eeD06Cf30152"];
+  const cobie = ["0xcdd46667E9Ce3db1Bd978DF806479BBE615E0523"];
   const artifact = await deployer.loadArtifact("CobieEscrow");
   const cobieEscrow = await deployer.deploy(artifact, cobie);
 

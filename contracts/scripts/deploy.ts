@@ -9,7 +9,7 @@ function delay(ms: number) {
 }
 
 async function main() {
-  const cobie = ["0x4Cbe68d825d21cB4978F56815613eeD06Cf30152"];
+  const cobie = ["0xcdd46667E9Ce3db1Bd978DF806479BBE615E0523"];
   const cobieEscrow = await hre.ethers.deployContract("CobieEscrow", cobie);
 
   await cobieEscrow.waitForDeployment();
