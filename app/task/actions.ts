@@ -26,6 +26,10 @@ export async function createTask(prevState: unknown, formData: FormData) {
     return { data: null, error: { message: "Missing required fields" } };
   }
 
+  if (price_usdc <= 0) {
+    return { data: null, error: { message: "Price must be greater than zero" } };
+  }
+
   const result = await supabase.from("tasks").insert({
     title,
     description,
