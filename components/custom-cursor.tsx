@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 const INTERACTIVE_SELECTOR = "a, button, [role='button'], input, textarea, select, label, [data-clickable]";
+const EXCLUDED_PATHS = ["/ecommerce-demo"];
 
 // Cursor arrow shape — tip at (0,0), classic pointer silhouette
 const ARROW_PATH = "M 1 1 L 1 16.5 L 5 13 L 8.5 19.5 L 11 18.5 L 7.5 12 L 13 11.5 Z";
@@ -10,12 +12,15 @@ const ARROW_PATH = "M 1 1 L 1 16.5 L 5 13 L 8.5 19.5 L 11 18.5 L 7.5 12 L 13 11.
 type CursorState = "default" | "hover" | "active";
 
 export function CustomCursor() {
+  const pathname = usePathname();
   const arrowRef = useRef<SVGSVGElement>(null);
   const [visible, setVisible] = useState(false);
   const [state, setState] = useState<CursorState>("default");
   const isHovering = useRef(false);
+  const excluded = EXCLUDED_PATHS.some((p) => pathname?.startsWith(p));
 
   useEffect(() => {
+    if (excluded) return;
     if (window.matchMedia("(pointer: coarse)").matches) return;
 
     const onMove = (e: MouseEvent) => {
@@ -52,7 +57,9 @@ export function CustomCursor() {
       document.removeEventListener("mouseenter", onEnter);
       document.documentElement.style.cursor = "";
     };
-  }, [visible, state]);
+  }, [visible, state, excluded]);
+
+  if (excluded) return null;
 
   const styles = {
     default: { w: 18, h: 22, fill: "#cddfc5", stroke: "rgba(0,0,0,0.4)", filter: "none" },

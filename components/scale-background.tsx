@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import { dimPolygons, brightPolygons } from "./scale-cells";
 
 // Hover + ripple constants
@@ -14,7 +15,10 @@ const RIPPLE_PEAK_OPACITY = 0.9;
 
 type Ripple = { x: number; y: number; time: number };
 
+const EXCLUDED_PATHS = ["/ecommerce-demo"];
+
 export function ScaleBackground() {
+  const pathname = usePathname();
   const brightLayerRef = useRef<HTMLDivElement>(null);
   const ripplesRef = useRef<Ripple[]>([]);
   const mouseRef = useRef<{ x: number; y: number }>({ x: -9999, y: -9999 });
@@ -70,7 +74,10 @@ export function ScaleBackground() {
     rafRef.current = requestAnimationFrame(buildMask);
   }, []);
 
+  const excluded = EXCLUDED_PATHS.some((p) => pathname?.startsWith(p));
+
   useEffect(() => {
+    if (excluded) return;
     if (window.matchMedia("(pointer: coarse)").matches) return;
 
     const onMouseDown = (e: MouseEvent) => {
@@ -96,7 +103,9 @@ export function ScaleBackground() {
       document.removeEventListener("mouseleave", onMouseLeave);
       cancelAnimationFrame(rafRef.current);
     };
-  }, [buildMask]);
+  }, [buildMask, excluded]);
+
+  if (excluded) return null;
 
   return (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">

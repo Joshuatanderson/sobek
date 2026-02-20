@@ -66,7 +66,7 @@ export default function EcommerceDemo() {
         .ecommerce-demo [role="button"] { cursor: pointer !important; }
         .ecommerce-demo input[type="text"] { cursor: text !important; }
       `}</style>
-    <div className="ecommerce-demo min-h-screen bg-white text-gray-900" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+    <div className="ecommerce-demo relative z-10 min-h-screen bg-white text-gray-900" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
       {/* Top banner bar */}
       <div className="bg-[#1a1a1a] text-white text-xs">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-2">
