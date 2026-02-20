@@ -1,0 +1,3 @@
+# Bun configuration for supabase-dev skill
+# Run from project root: bun .claude/skills/database/supabase-dev/test-listTables.ts
+# Bun auto-loads .env.local from cwd (project root)
