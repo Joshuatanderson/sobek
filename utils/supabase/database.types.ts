@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      reputation_events: {
+        Row: {
+          id: number
+          wallet: string
+          delta: number
+          reason: string
+          order_id: string | null
+          amount_usd: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          wallet: string
+          delta: number
+          reason: string
+          order_id?: string | null
+          amount_usd?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          wallet?: string
+          delta?: number
+          reason?: string
+          order_id?: string | null
+          amount_usd?: number | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reputation_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           charge_id: string | null
@@ -124,7 +162,7 @@ export type Database = {
           display_name: string | null
           id: string
           last_seen_at: string | null
-          reputation_score: number
+          reputation_sum: number
           telegram_chat_id: number | null
           telegram_handle: string | null
           telegram_link_token: string | null
@@ -135,7 +173,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           last_seen_at?: string | null
-          reputation_score?: number
+          reputation_sum?: number
           telegram_chat_id?: number | null
           telegram_handle?: string | null
           telegram_link_token?: string | null
@@ -146,7 +184,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           last_seen_at?: string | null
-          reputation_score?: number
+          reputation_sum?: number
           telegram_chat_id?: number | null
           telegram_handle?: string | null
           telegram_link_token?: string | null
