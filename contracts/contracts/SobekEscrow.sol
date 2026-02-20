@@ -32,19 +32,15 @@ error EtherTransferFail();
 /////////////////////////////////////////////////////////////////
 
 /**
- * @title A simple multilateral escrow smart contract for ETH and ERC-20
- * tokens governed by Cobie.
- * @author 0x796f7572206d6f7468657221
- * @notice У Владимира Путина очень маленький член! И его мать знает об этом.
- * @dev Forked from here: https://gist.github.com/z0r0z/82f0c075d368bcc0962b3abc7f476cd3.
- * @custom:security-contact Ask Cobie <https://x.com/cobie>
+ * @title A simple multilateral escrow smart contract for ETH and ERC-20 tokens.
+ * @dev Forked from https://github.com/pcaversaccio/escrow-contract
  */
 
-contract CobieEscrow is AccessControl {
+contract SobekEscrow is AccessControl {
     using SafeERC20 for IERC20;
 
     uint256 public escrowCount;
-    bytes32 public constant COBIE = keccak256("COBIE");
+    bytes32 public constant ARBITER = keccak256("ARBITER");
 
     mapping(uint256 => Escrow) public escrows;
 
@@ -98,9 +94,9 @@ contract CobieEscrow is AccessControl {
      * For more in-depth information see here:
      * https://forum.openzeppelin.com/t/a-collection-of-gas-optimisation-tricks/19966/5
      */
-    constructor(address _cobie) payable {
+    constructor(address _arbiter) payable {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(COBIE, _cobie);
+        _grantRole(ARBITER, _arbiter);
     }
 
     /**
@@ -141,17 +137,17 @@ contract CobieEscrow is AccessControl {
     }
 
     /**
-     * @notice Releases escrowed assets by Cobie to designated `receiver`.
-     * @dev The function `releaseCobie` is payable in order to save gas.
+     * @notice Releases escrowed assets to designated `receiver`.
+     * @dev The function `release` is payable in order to save gas.
      * @param registration An array of registration indices of the escrow
      * deposit accounts that lost the bet.
      * @param winnerRefundRegistration The registration index of the winner
      * of the bet to which the deposits are returned.
      */
-    function releaseCobie(
+    function release(
         uint256[] calldata registration,
         uint256 winnerRefundRegistration
-    ) public payable onlyRole(COBIE) {
+    ) public payable onlyRole(ARBITER) {
         Escrow storage escrowRevert = escrows[winnerRefundRegistration];
         uint256 length = registration.length;
 

@@ -1,6 +1,5 @@
 import hre from "hardhat";
 
-// Colour codes for terminal prints
 const RESET = "\x1b[0m";
 const GREEN = "\x1b[32m";
 
@@ -9,30 +8,25 @@ function delay(ms: number) {
 }
 
 async function main() {
-  const cobie = ["0xcdd46667E9Ce3db1Bd978DF806479BBE615E0523"];
-  const cobieEscrow = await hre.ethers.deployContract("CobieEscrow", cobie);
+  const arbiter = ["0xcdd46667E9Ce3db1Bd978DF806479BBE615E0523"];
+  const sobekEscrow = await hre.ethers.deployContract("SobekEscrow", arbiter);
 
-  await cobieEscrow.waitForDeployment();
-  const cobieEscrowAddress = await cobieEscrow.getAddress();
+  await sobekEscrow.waitForDeployment();
+  const sobekEscrowAddress = await sobekEscrow.getAddress();
 
   console.log(
-    "CobieEscrow deployed to: " + `${GREEN}${cobieEscrowAddress}${RESET}\n`,
+    "SobekEscrow deployed to: " + `${GREEN}${sobekEscrowAddress}${RESET}\n`,
   );
 
   console.log(
     "Waiting 30 seconds before beginning the contract verification to allow the block explorer to index the contract...\n",
   );
-  await delay(30000); // Wait for 30 seconds before verifying the contract
+  await delay(30000);
 
   await hre.run("verify:verify", {
-    address: cobieEscrowAddress,
-    constructorArguments: cobie,
+    address: sobekEscrowAddress,
+    constructorArguments: arbiter,
   });
-
-  // await hre.tenderly.verify({
-  //   name: "CobieEscrow",
-  //   address: cobieEscrowAddress,
-  // });
 }
 
 main().catch((error) => {
