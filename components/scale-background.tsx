@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 
 // Alligator-scale pattern: offset rows of irregular rounded-rectangular shapes
 // Real croc scales are wider than tall, arranged in a brick-like offset pattern
@@ -37,6 +37,11 @@ function scaleShape(cx: number, cy: number, hw: number, hh: number, seed: number
 }
 
 export function ScaleBackground() {
+  const brightLayerRef = useRef<HTMLDivElement>(null);
+  const ripplesRef = useRef<Ripple[]>([]);
+  const mouseRef = useRef<{ x: number; y: number }>({ x: -9999, y: -9999 });
+  const rafRef = useRef<number>(0);
+
   // Brick-pattern layout: 4 scales per tile
   // Row 0: two scales side by side
   // Row 1: two scales offset by half a cell width (brick pattern)
@@ -55,30 +60,131 @@ export function ScaleBackground() {
     scaleShape(TILE_W, cellH * 1.5, hw + rand(9) * 1.5, hh + rand(10) * 1, 5),
   ];
 
+  const buildMask = useCallback((now: number) => {
+    const el = brightLayerRef.current;
+    if (!el) return;
+
+    const ripples = ripplesRef.current;
+    const mouse = mouseRef.current;
+
+    // Expire old ripples
+    while (ripples.length > 0 && now - ripples[0].time > RIPPLE_DURATION) {
+      ripples.shift();
+    }
+
+    const gradients: string[] = [];
+
+    // Hover glow: soft radial spot following cursor
+    if (mouse.x > -9000) {
+      gradients.push(
+        `radial-gradient(circle at ${mouse.x}px ${mouse.y}px, rgba(255,255,255,${HOVER_OPACITY}) 0px, rgba(255,255,255,${HOVER_OPACITY * 0.5}) ${HOVER_RADIUS * 0.5}px, transparent ${HOVER_RADIUS}px)`
+      );
+    }
+
+    // Click ripples
+    for (const rip of ripples) {
+      const elapsed = now - rip.time;
+      const progress = elapsed / RIPPLE_DURATION;
+      const radius = elapsed * RIPPLE_SPEED;
+
+      const fade = (1 - progress) * (1 - progress) * RIPPLE_PEAK_OPACITY;
+
+      const innerStart = Math.max(0, radius - RIPPLE_RING_WIDTH / 2 - RIPPLE_FADE_WIDTH);
+      const innerEdge = Math.max(0, radius - RIPPLE_RING_WIDTH / 2);
+      const outerEdge = radius + RIPPLE_RING_WIDTH / 2;
+      const outerEnd = radius + RIPPLE_RING_WIDTH / 2 + RIPPLE_FADE_WIDTH;
+
+      gradients.push(
+        `radial-gradient(circle at ${rip.x}px ${rip.y}px, transparent ${innerStart}px, rgba(255,255,255,${fade}) ${innerEdge}px, rgba(255,255,255,${fade}) ${outerEdge}px, transparent ${outerEnd}px)`
+      );
+    }
+
+    if (gradients.length === 0) {
+      el.style.maskImage = "linear-gradient(transparent,transparent)";
+      el.style.webkitMaskImage = "linear-gradient(transparent,transparent)";
+    } else {
+      const mask = gradients.join(", ");
+      el.style.maskImage = mask;
+      el.style.webkitMaskImage = mask;
+      el.style.maskComposite = "add";
+      el.style.webkitMaskComposite = "source-over";
+    }
+
+    rafRef.current = requestAnimationFrame(buildMask);
+  }, []);
+
+  useEffect(() => {
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+
+    const onMouseDown = (e: MouseEvent) => {
+      const ripples = ripplesRef.current;
+      ripples.push({ x: e.clientX, y: e.clientY, time: performance.now() });
+      if (ripples.length > 10) ripples.splice(0, ripples.length - 10);
+    };
+    const onMouseMove = (e: MouseEvent) => {
+      mouseRef.current = { x: e.clientX, y: e.clientY };
+    };
+    const onMouseLeave = () => {
+      mouseRef.current = { x: -9999, y: -9999 };
+    };
+
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseleave", onMouseLeave);
+    rafRef.current = requestAnimationFrame(buildMask);
+
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseleave", onMouseLeave);
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, [buildMask]);
+
+  const scalePolygons = (id: string, stroke: string, strokeWidth: string) => (
+    <pattern
+      id={id}
+      width={TILE_W}
+      height={TILE_H}
+      patternUnits="userSpaceOnUse"
+    >
+      {scales.map((pts, i) => (
+        <polygon
+          key={i}
+          points={pts}
+          fill="none"
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
+        />
+      ))}
+    </pattern>
+  );
+
   return (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+      {/* Dim base scale pattern */}
       <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <pattern
-            id="scales"
-            width={TILE_W}
-            height={TILE_H}
-            patternUnits="userSpaceOnUse"
-          >
-            {scales.map((pts, i) => (
-              <polygon
-                key={i}
-                points={pts}
-                fill="none"
-                stroke="rgba(52,211,153,0.07)"
-                strokeWidth="0.5"
-                strokeLinejoin="round"
-              />
-            ))}
-          </pattern>
+          {scalePolygons("scales", "rgba(52,211,153,0.07)", "0.5")}
         </defs>
         <rect width="100%" height="100%" fill="url(#scales)" />
       </svg>
+
+      {/* Bright scale pattern — revealed by ripple mask */}
+      <div
+        ref={brightLayerRef}
+        className="absolute inset-0 w-full h-full"
+        style={{ maskImage: "linear-gradient(transparent,transparent)", WebkitMaskImage: "linear-gradient(transparent,transparent)" }}
+      >
+        <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            {scalePolygons("scales-bright", "rgba(52,211,153,0.35)", "0.8")}
+          </defs>
+          <rect width="100%" height="100%" fill="url(#scales-bright)" />
+        </svg>
+      </div>
+
       <PerlinBreath />
     </div>
   );
@@ -142,46 +248,55 @@ function fbm(x: number, y: number, octaves: number): number {
 }
 
 // Canvas-based organic light field using fractal noise
-// Creates drifting patches of light — no repeating pattern
+const CANVAS_SCALE = 8;
+
+// Hover + ripple constants for bright scale layer
+const HOVER_RADIUS = 120; // px
+const HOVER_OPACITY = 0.5;
+const RIPPLE_SPEED = 0.3; // px/ms
+const RIPPLE_RING_WIDTH = 50; // px
+const RIPPLE_FADE_WIDTH = 30; // px soft edges
+const RIPPLE_DURATION = 1200; // ms
+const RIPPLE_PEAK_OPACITY = 0.9;
+
+type Ripple = { x: number; y: number; time: number };
+
 function PerlinBreath() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const SCALE = 8;
-    let w = Math.ceil(window.innerWidth / SCALE);
-    let h = Math.ceil(window.innerHeight / SCALE);
+    let w = Math.ceil(window.innerWidth / CANVAS_SCALE);
+    let h = Math.ceil(window.innerHeight / CANVAS_SCALE);
     canvas.width = w;
     canvas.height = h;
 
     const resize = () => {
-      w = Math.ceil(window.innerWidth / SCALE);
-      h = Math.ceil(window.innerHeight / SCALE);
+      w = Math.ceil(window.innerWidth / CANVAS_SCALE);
+      h = Math.ceil(window.innerHeight / CANVAS_SCALE);
       canvas.width = w;
       canvas.height = h;
     };
+
     window.addEventListener("resize", resize);
 
     let raf: number;
     const draw = (now: number) => {
-      const t = now * 0.0001; // slow drift
+      const t = now * 0.0001;
       const img = ctx.createImageData(w, h);
       const d = img.data;
 
       for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
-          // Sample noise in world space, offset by time for animation
           const nx = x * 0.03 + t * 0.8;
           const ny = y * 0.03 + t * 0.5;
-
-          // 5 octaves of fractal noise
           const n = fbm(nx, ny, 5);
-
-          // Map from [-1,1] to [0,1], then apply power curve for contrast
           const v = Math.max(0, (n + 1) * 0.5);
           const alpha = v * v * 0.08;
 
@@ -189,7 +304,7 @@ function PerlinBreath() {
           d[i] = 52;
           d[i + 1] = 211;
           d[i + 2] = 153;
-          d[i + 3] = alpha * 255;
+          d[i + 3] = Math.min(alpha * 255, 255);
         }
       }
 
