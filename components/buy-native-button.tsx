@@ -16,7 +16,7 @@ export function BuyNativeButton({
   price: number;
   recipientAddress: `0x${string}`;
 }) {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const chains = useChains();
   const nativeCurrency = chains[0].nativeCurrency;
   const nativeAmount = price / ETH_USD_PRICE;
@@ -43,7 +43,7 @@ export function BuyNativeButton({
   useEffect(() => {
     if (isTxConfirmed && txHash) {
       setStatus("submitting");
-      createOrder(taskId, txHash, nativeCurrency.symbol)
+      createOrder(taskId, txHash, address!, nativeCurrency.symbol)
         .then((result) => {
           if (result.error) {
             setStatus("error");

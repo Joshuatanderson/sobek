@@ -59,7 +59,7 @@ export async function getTasks() {
   return { data, error: null };
 }
 
-export async function createOrder(taskId: string, txHash: string, paymentCurrency: string = "USDC") {
+export async function createOrder(taskId: string, txHash: string, walletAddress: string, paymentCurrency: string = "USDC") {
   // Look up task to get provider's agent_id and details
   const { data: task, error: taskError } = await supabaseAdmin
     .from("tasks")
@@ -71,6 +71,17 @@ export async function createOrder(taskId: string, txHash: string, paymentCurrenc
     return { data: null, error: { message: "Task not found" } };
   }
 
+  // Resolve wallet to user (upsert so accountless payers get a record)
+  const { data: client, error: clientError } = await supabaseAdmin
+    .from("users")
+    .upsert({ wallet_address: walletAddress }, { onConflict: "wallet_address" })
+    .select("id")
+    .single();
+
+  if (clientError || !client) {
+    return { data: null, error: { message: "Failed to resolve client wallet" } };
+  }
+
   // Insert order
   const { data: order, error: orderError } = await supabaseAdmin
     .from("orders")
@@ -79,6 +90,7 @@ export async function createOrder(taskId: string, txHash: string, paymentCurrenc
       tx_hash: txHash,
       status: "paid",
       paid_at: new Date().toISOString(),
+      client_id: client.id,
     })
     .select()
     .single();

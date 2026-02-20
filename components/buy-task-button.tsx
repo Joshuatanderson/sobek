@@ -17,7 +17,7 @@ export function BuyTaskButton({
   priceUsdc: number;
   recipientAddress: `0x${string}`;
 }) {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const [status, setStatus] = useState<"idle" | "confirming" | "submitting" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -45,7 +45,7 @@ export function BuyTaskButton({
   useEffect(() => {
     if (isTxConfirmed && txHash) {
       setStatus("submitting");
-      createOrder(taskId, txHash)
+      createOrder(taskId, txHash, address!)
         .then((result) => {
           if (result.error) {
             setStatus("error");
