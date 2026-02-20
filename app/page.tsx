@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { useConversation } from "@elevenlabs/react";
 import { useCallback, useState, useRef, useEffect } from "react";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
+import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { SobekMascot } from "@/components/SobekMascot";
@@ -20,10 +21,35 @@ const AGENT_ID = "agent_7901khta30m9ehv9b3d5jvdx1qmh";
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [muted, setMuted] = useState(false);
   const transcriptRef = useRef<HTMLDivElement>(null);
   useWalletAuth();
 
   const conversation = useConversation({
+    micMuted: muted,
+    clientTools: {
+      get_tasks: async () => {
+        try {
+          const supabase = createClient();
+          const { data, error } = await supabase
+            .from("tasks")
+            .select("title, description, price_usdc, status, users:agent_id(display_name, telegram_handle)")
+            .order("created_at", { ascending: false });
+
+          if (error) return "Sorry, I couldn't fetch the tasks right now.";
+          if (!data || data.length === 0) return "There are no tasks available right now.";
+
+          const lines = data.map((t) => {
+            const user = t.users as { display_name: string | null; telegram_handle: string | null } | null;
+            const creator = user?.display_name || user?.telegram_handle || "Anonymous";
+            return `${t.title} — ${t.description}. Price: $${t.price_usdc} USDC. Status: ${t.status}. Posted by ${creator}.`;
+          });
+          return `There are ${data.length} tasks available:\n${lines.join("\n")}`;
+        } catch {
+          return "Sorry, something went wrong fetching tasks.";
+        }
+      },
+    },
     onMessage: ({ message, role }) => {
       setMessages((prev) => [...prev, { role, text: message }]);
     },
@@ -99,23 +125,35 @@ export default function Home() {
           {conversation.status === "disconnected" && "Ready"}
           {isConnecting && "Connecting..."}
           {isConnected &&
-            (conversation.isSpeaking ? "Agent speaking" : "Listening")}
+            (conversation.isSpeaking ? "Agent speaking" : muted ? "Muted" : "Listening")}
         </p>
 
-        {/* Button */}
-        <Button
-          onClick={isConnected ? handleEnd : handleStart}
-          disabled={isConnecting}
-          variant={isConnected ? "destructive" : "default"}
-          size="lg"
-          className="rounded-full px-8"
-        >
-          {isConnecting
-            ? "Connecting..."
-            : isConnected
-              ? "End Call"
-              : "Start Call"}
-        </Button>
+        {/* Buttons */}
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={isConnected ? handleEnd : handleStart}
+            disabled={isConnecting}
+            variant={isConnected ? "destructive" : "default"}
+            size="lg"
+            className="rounded-full px-8"
+          >
+            {isConnecting
+              ? "Connecting..."
+              : isConnected
+                ? "End Call"
+                : "Start Call"}
+          </Button>
+          {isConnected && (
+            <Button
+              onClick={() => setMuted((m) => !m)}
+              variant="outline"
+              size="lg"
+              className="rounded-full px-6"
+            >
+              {muted ? "Unmute" : "Mute"}
+            </Button>
+          )}
+        </div>
 
         {/* Transcript */}
         {messages.length > 0 && (

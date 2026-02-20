@@ -1,0 +1,15 @@
+{
+    "name": "get_tasks",
+    "description": "Fetches the list of available tasks and services from the Sobek marketplace. Call this when the user asks what tasks, services, or jobs are available, or wants to know what they can buy or order.",
+    "type": "client",
+    "expects_response": true,
+    "response_timeout_secs": 10,
+    "parameters": {
+        "type": "object",
+        "description": "Parameters for the client tool",
+        "properties": {}
+    },
+    "dynamic_variables": {
+        "dynamic_variable_placeholders": {}
+    }
+}

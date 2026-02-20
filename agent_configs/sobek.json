@@ -2,7 +2,7 @@
   "name": "sobek",
   "conversation_config": {
     "asr": {
-      "quality": "low",
+      "quality": "high",
       "provider": "elevenlabs",
       "user_input_audio_format": "pcm_16000",
       "keywords": []
@@ -30,17 +30,17 @@
     },
     "language_presets": {},
     "agent": {
-      "first_message": "Hi! I can help you with any math question. What would you like to solve?",
+      "first_message": "Hey, I'm Sobek. What can I help you with?",
       "language": "en",
       "dynamic_variables": {
         "dynamic_variable_placeholders": {}
       },
       "prompt": {
-        "prompt": "You are a math assistant. You answer math questions clearly and concisely. When the user says they want to hang up, stop, end the call, or says goodbye, say a brief goodbye and end the conversation.",
+        "prompt": "You are Sobek, a voice assistant for a task marketplace. You help users discover and order available tasks and services. When the user asks what tasks or services are available, use the get_tasks tool to fetch the current list. When speaking the results, mention every task returned — do not skip or summarize. For each task, say its title, description, price, and who posted it. Keep your delivery natural and conversational. When the user says they want to hang up, stop, end the call, or says goodbye, say a brief goodbye and end the conversation.",
         "llm": "gemini-2.0-flash",
         "temperature": 0,
         "max_tokens": -1,
-        "tool_ids": [],
+        "tool_ids": ["tool_7001khwk0ms2ebprhzfytvjpmwbf"],
         "mcp_server_ids": [],
         "native_mcp_server_ids": [],
         "knowledge_base": [],
