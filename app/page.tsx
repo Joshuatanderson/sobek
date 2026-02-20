@@ -187,8 +187,10 @@ export default function Home() {
       {/* Demo */}
       <div className="flex flex-col items-center gap-8">
         {/* Orb */}
-        <div
-          className={`orb relative z-10 ${conversation.isSpeaking ? "orb-speaking" : ""} ${isConnected ? "orb-connected" : ""}`}
+        <button
+          onClick={isConnected ? handleEnd : handleStart}
+          disabled={isConnecting}
+          className={`orb relative z-10 ${conversation.isSpeaking ? "orb-speaking" : ""} ${isConnected ? "orb-connected" : ""} ${isConnecting ? "opacity-60" : ""}`}
         />
 
         {/* Status */}
