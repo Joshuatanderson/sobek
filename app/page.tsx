@@ -9,6 +9,7 @@ import Image from "next/image";
 import { SobekMascot } from "@/components/SobekMascot";
 import { Header } from "@/components/header";
 import { useSobekVoice } from "@/hooks/useSobekVoice";
+import { OrbScales } from "@/components/orb-scales";
 
 const USE_CASES = [
   {
@@ -78,7 +79,9 @@ export default function Home() {
           onClick={voice.isConnected ? voice.end : voice.start}
           disabled={voice.isConnecting}
           className={`orb relative z-10 ${voice.isSpeaking ? "orb-speaking" : ""} ${voice.isConnected ? "orb-connected" : ""} ${voice.isConnecting ? "opacity-60" : ""}`}
-        />
+        >
+          <OrbScales />
+        </button>
 
         {/* Chalk arrow annotation */}
         {voice.status === "disconnected" && (

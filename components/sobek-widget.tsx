@@ -6,6 +6,7 @@ import Image from "next/image";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useSobekVoice } from "@/hooks/useSobekVoice";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
+import { OrbScales } from "@/components/orb-scales";
 
 export function SobekWidget() {
   const [open, setOpen] = useState(false);
@@ -81,7 +82,9 @@ export function SobekWidget() {
             aria-label={voice.isConnected ? "End voice session" : "Start voice session"}
             className={`orb relative z-10 ${voice.isSpeaking ? "orb-speaking" : ""} ${voice.isConnected ? "orb-connected" : ""} ${voice.isConnecting ? "opacity-60" : ""}`}
             style={{ width: 80, height: 80 }}
-          />
+          >
+            <OrbScales size={80} />
+          </button>
           <p className="text-xs text-sobek-green-light/70">
             {voice.status === "disconnected" && "Click to start"}
             {voice.isConnecting && "Connecting..."}
