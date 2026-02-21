@@ -20,7 +20,8 @@
     "deploy:hh": "hardhat run --network hardhat scripts/deploy.ts",
     "deploy:localhost": "hardhat run --network localhost scripts/deploy.ts",
     "deploy:basesepolia": "hardhat run --network baseSepolia scripts/deploy.ts",
-    "deploy:basemain": "hardhat run --network baseMain scripts/deploy.ts"
+    "deploy:basemain": "hardhat run --network baseMain scripts/deploy.ts",
+    "deploy:aditestnet": "hardhat run --network adiTestnet scripts/deploy.ts"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
@@ -42,5 +43,8 @@
     "ts-node": "^10.9.2",
     "typechain": "^8.3.2",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.97.0"
   }
 }

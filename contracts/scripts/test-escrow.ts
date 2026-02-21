@@ -1,6 +1,6 @@
 import hre from "hardhat";
 
-const ESCROW_ADDRESS = "0x831fB779405CEC66B72Ca894E588a0eF0C328e51";
+const ESCROW_ADDRESS = "0x75d5c0a7950Fa7324DF84Cd3071ccB7187940Bde";
 const DEPOSIT_AMOUNT = hre.ethers.parseEther("0.0001"); // tiny amount
 
 async function main() {

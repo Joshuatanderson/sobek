@@ -8,8 +8,12 @@ function delay(ms: number) {
 }
 
 async function main() {
-  const arbiter = ["0xcdd46667E9Ce3db1Bd978DF806479BBE615E0523"];
-  const sobekEscrow = await hre.ethers.deployContract("SobekEscrow", arbiter);
+  const args = [
+    "0xcdd46667E9Ce3db1Bd978DF806479BBE615E0523", // arbiter
+    "0xcdd46667E9Ce3db1Bd978DF806479BBE615E0523", // platformWallet
+    500, // platformFeeBps (5%)
+  ];
+  const sobekEscrow = await hre.ethers.deployContract("SobekEscrow", args);
 
   await sobekEscrow.waitForDeployment();
   const sobekEscrowAddress = await sobekEscrow.getAddress();
@@ -25,7 +29,7 @@ async function main() {
 
   await hre.run("verify:verify", {
     address: sobekEscrowAddress,
-    constructorArguments: arbiter,
+    constructorArguments: args,
   });
 }
 

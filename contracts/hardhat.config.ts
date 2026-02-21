@@ -74,6 +74,11 @@ const config: HardhatUserConfig = {
       url: vars.get("BASE_MAINNET_URL", "https://mainnet.base.org"),
       accounts,
     },
+    adiTestnet: {
+      chainId: 99999,
+      url: "https://rpc.ab.testnet.adifoundation.ai/",
+      accounts,
+    },
   },
   contractSizer: {
     alphaSort: true,

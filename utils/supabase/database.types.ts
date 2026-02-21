@@ -23,6 +23,8 @@ export type Database = {
           dispute_initiated_at: string | null
           dispute_initiated_by: string | null
           escrow_registration: number | null
+          escrow_resolved_at: string | null
+          escrow_resolved_to: string | null
           escrow_status: string | null
           hedera_schedule_id: string | null
           id: string
@@ -40,6 +42,8 @@ export type Database = {
           dispute_initiated_at?: string | null
           dispute_initiated_by?: string | null
           escrow_registration?: number | null
+          escrow_resolved_at?: string | null
+          escrow_resolved_to?: string | null
           escrow_status?: string | null
           hedera_schedule_id?: string | null
           id?: string
@@ -57,6 +61,8 @@ export type Database = {
           dispute_initiated_at?: string | null
           dispute_initiated_by?: string | null
           escrow_registration?: number | null
+          escrow_resolved_at?: string | null
+          escrow_resolved_to?: string | null
           escrow_status?: string | null
           hedera_schedule_id?: string | null
           id?: string

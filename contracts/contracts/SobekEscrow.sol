@@ -45,6 +45,9 @@ contract SobekEscrow is AccessControl {
     uint256 public escrowCount;
     bytes32 public constant ARBITER = keccak256("ARBITER");
 
+    address payable public immutable platformWallet;
+    uint256 public immutable platformFeeBps;
+
     mapping(uint256 => Escrow) public escrows;
 
     struct Escrow {
@@ -98,15 +101,26 @@ contract SobekEscrow is AccessControl {
     event WinnerRefund(uint256 indexed winnerRefundRegistration);
 
     /**
+     * @dev Event that is emitted when a platform fee is taken
+     * from a released escrow.
+     * @param platform The platform wallet that received the fee.
+     * @param amount The fee amount taken.
+     * @param registration The registration index of the escrow.
+     */
+    event FeeTaken(address indexed platform, uint256 amount, uint256 indexed registration);
+
+    /**
      * @dev You can cut out 10 opcodes in the creation-time EVM bytecode
      * if you declare a constructor `payable`.
      *
      * For more in-depth information see here:
      * https://forum.openzeppelin.com/t/a-collection-of-gas-optimisation-tricks/19966/5
      */
-    constructor(address _arbiter) payable {
+    constructor(address _arbiter, address payable _platformWallet, uint256 _platformFeeBps) payable {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(ARBITER, _arbiter);
+        platformWallet = _platformWallet;
+        platformFeeBps = _platformFeeBps;
     }
 
     /**
@@ -214,12 +228,24 @@ contract SobekEscrow is AccessControl {
         // Zero out before external call (CEI pattern — prevents reentrancy + double-spend)
         escrow.value = 0;
 
+        uint256 fee = (amount * platformFeeBps) / 10000;
+        uint256 sellerAmount = amount - fee;
+
         if (address(escrow.token) == address(0)) {
-            (bool success, ) = escrow.receiver.call{value: amount}("");
+            (bool success, ) = escrow.receiver.call{value: sellerAmount}("");
             if (!success) revert EtherTransferFail();
+            if (fee > 0) {
+                (bool feeSuccess, ) = platformWallet.call{value: fee}("");
+                if (!feeSuccess) revert EtherTransferFail();
+            }
         } else {
-            escrow.token.safeTransfer(escrow.receiver, amount);
+            escrow.token.safeTransfer(escrow.receiver, sellerAmount);
+            if (fee > 0) {
+                escrow.token.safeTransfer(platformWallet, fee);
+            }
         }
+
+        emit FeeTaken(platformWallet, fee, registration);
         emit ReleaseToReceiver(registration);
     }
 }

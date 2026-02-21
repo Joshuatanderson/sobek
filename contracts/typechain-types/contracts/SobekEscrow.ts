@@ -34,6 +34,8 @@ export interface SobekEscrowInterface extends Interface {
       | "getRoleAdmin"
       | "grantRole"
       | "hasRole"
+      | "platformFeeBps"
+      | "platformWallet"
       | "release"
       | "releaseToReceiver"
       | "renounceRole"
@@ -44,6 +46,7 @@ export interface SobekEscrowInterface extends Interface {
   getEvent(
     nameOrSignatureOrTopic:
       | "Deposit"
+      | "FeeTaken"
       | "Release"
       | "ReleaseToReceiver"
       | "RoleAdminChanged"
@@ -80,6 +83,14 @@ export interface SobekEscrowInterface extends Interface {
   encodeFunctionData(
     functionFragment: "hasRole",
     values: [BytesLike, AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "platformFeeBps",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "platformWallet",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "release",
@@ -119,6 +130,14 @@ export interface SobekEscrowInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "grantRole", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "hasRole", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "platformFeeBps",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "platformWallet",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "release", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "releaseToReceiver",
@@ -159,6 +178,28 @@ export namespace DepositEvent {
     amount: bigint;
     registration: bigint;
     details: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace FeeTakenEvent {
+  export type InputTuple = [
+    platform: AddressLike,
+    amount: BigNumberish,
+    registration: BigNumberish
+  ];
+  export type OutputTuple = [
+    platform: string,
+    amount: bigint,
+    registration: bigint
+  ];
+  export interface OutputObject {
+    platform: string;
+    amount: bigint;
+    registration: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -347,6 +388,10 @@ export interface SobekEscrow extends BaseContract {
     "view"
   >;
 
+  platformFeeBps: TypedContractMethod<[], [bigint], "view">;
+
+  platformWallet: TypedContractMethod<[], [string], "view">;
+
   release: TypedContractMethod<
     [registration: BigNumberish[], winnerRefundRegistration: BigNumberish],
     [void],
@@ -434,6 +479,12 @@ export interface SobekEscrow extends BaseContract {
     "view"
   >;
   getFunction(
+    nameOrSignature: "platformFeeBps"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "platformWallet"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
     nameOrSignature: "release"
   ): TypedContractMethod<
     [registration: BigNumberish[], winnerRefundRegistration: BigNumberish],
@@ -467,6 +518,13 @@ export interface SobekEscrow extends BaseContract {
     DepositEvent.InputTuple,
     DepositEvent.OutputTuple,
     DepositEvent.OutputObject
+  >;
+  getEvent(
+    key: "FeeTaken"
+  ): TypedContractEvent<
+    FeeTakenEvent.InputTuple,
+    FeeTakenEvent.OutputTuple,
+    FeeTakenEvent.OutputObject
   >;
   getEvent(
     key: "Release"
@@ -521,6 +579,17 @@ export interface SobekEscrow extends BaseContract {
       DepositEvent.InputTuple,
       DepositEvent.OutputTuple,
       DepositEvent.OutputObject
+    >;
+
+    "FeeTaken(address,uint256,uint256)": TypedContractEvent<
+      FeeTakenEvent.InputTuple,
+      FeeTakenEvent.OutputTuple,
+      FeeTakenEvent.OutputObject
+    >;
+    FeeTaken: TypedContractEvent<
+      FeeTakenEvent.InputTuple,
+      FeeTakenEvent.OutputTuple,
+      FeeTakenEvent.OutputObject
     >;
 
     "Release(uint256)": TypedContractEvent<

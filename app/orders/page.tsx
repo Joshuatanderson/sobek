@@ -39,33 +39,23 @@ function formatDate(dateStr: string | null) {
   });
 }
 
-function statusBadge(status: string) {
-  const colors: Record<string, string> = {
-    paid: "bg-green-900/40 text-green-400 border-green-700/50",
-    pending: "bg-yellow-900/40 text-yellow-400 border-yellow-700/50",
-    completed: "bg-blue-900/40 text-blue-400 border-blue-700/50",
-    cancelled: "bg-red-900/40 text-red-400 border-red-700/50",
-  };
-  const cls = colors[status] ?? "bg-gray-900/40 text-gray-400 border-gray-700/50";
-  return (
-    <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded border ${cls}`}>
-      {status}
-    </span>
-  );
-}
-
-function escrowBadge(status: string | null) {
-  if (!status) return null;
+function statusBadge(escrowStatus: string | null) {
   const colors: Record<string, string> = {
     active: "bg-amber-900/40 text-amber-400 border-amber-700/50",
-    released: "bg-green-900/40 text-green-400 border-green-700/50",
+    pending_schedule: "bg-yellow-900/40 text-yellow-400 border-yellow-700/50",
+    releasing: "bg-blue-900/40 text-blue-400 border-blue-700/50",
     disputed: "bg-red-900/40 text-red-400 border-red-700/50",
-    none: "bg-gray-900/40 text-gray-500 border-gray-700/50",
+    refunded: "bg-red-900/40 text-red-400 border-red-700/50",
+    released: "bg-green-900/40 text-green-400 border-green-700/50",
   };
-  const cls = colors[status] ?? "bg-gray-900/40 text-gray-400 border-gray-700/50";
+
+  // 'none' or null → paid (no escrow involved)
+  const label = !escrowStatus || escrowStatus === "none" ? "paid" : escrowStatus;
+  const cls = colors[label] ?? "bg-green-900/40 text-green-400 border-green-700/50";
+
   return (
     <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded border ${cls}`}>
-      {status}
+      {label}
     </span>
   );
 }
@@ -80,7 +70,6 @@ function OrdersTableSkeleton() {
             <TableHead className="text-sobek-green-light/80 text-right">Amount</TableHead>
             <TableHead className="text-sobek-green-light/80">Buyer</TableHead>
             <TableHead className="text-sobek-green-light/80">Status</TableHead>
-            <TableHead className="text-sobek-green-light/80">Escrow</TableHead>
             <TableHead className="text-sobek-green-light/80">Tx</TableHead>
             <TableHead className="text-sobek-green-light/80">Date</TableHead>
           </TableRow>
@@ -91,7 +80,6 @@ function OrdersTableSkeleton() {
               <TableCell><Skeleton className="h-4 w-32 bg-sobek-forest/30" /></TableCell>
               <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto bg-sobek-forest/30" /></TableCell>
               <TableCell><Skeleton className="h-4 w-24 bg-sobek-forest/30" /></TableCell>
-              <TableCell><Skeleton className="h-5 w-14 bg-sobek-forest/30" /></TableCell>
               <TableCell><Skeleton className="h-5 w-14 bg-sobek-forest/30" /></TableCell>
               <TableCell><Skeleton className="h-4 w-20 bg-sobek-forest/30" /></TableCell>
               <TableCell><Skeleton className="h-4 w-28 bg-sobek-forest/30" /></TableCell>
@@ -143,7 +131,6 @@ async function OrdersTable() {
             <TableHead className="text-sobek-green-light/80 text-right">Amount</TableHead>
             <TableHead className="text-sobek-green-light/80">Buyer</TableHead>
             <TableHead className="text-sobek-green-light/80">Status</TableHead>
-            <TableHead className="text-sobek-green-light/80">Escrow</TableHead>
             <TableHead className="text-sobek-green-light/80">Tx</TableHead>
             <TableHead className="text-sobek-green-light/80">Date</TableHead>
           </TableRow>
@@ -166,8 +153,7 @@ async function OrdersTable() {
                       ? truncateHash(buyer.wallet_address)
                       : "Unknown")}
                 </TableCell>
-                <TableCell>{statusBadge(order.status)}</TableCell>
-                <TableCell>{escrowBadge(order.escrow_status)}</TableCell>
+                <TableCell>{statusBadge(order.escrow_status)}</TableCell>
                 <TableCell className="text-sobek-green-light/70 font-mono text-xs">
                   {order.tx_hash ? truncateHash(order.tx_hash) : "\u2014"}
                 </TableCell>

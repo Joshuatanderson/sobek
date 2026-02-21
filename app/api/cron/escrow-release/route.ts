@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   // Find active escrows with a Hedera schedule
   const { data: orders, error } = await supabaseAdmin
     .from("orders")
-    .select("id, hedera_schedule_id, escrow_registration")
+    .select("id, hedera_schedule_id, escrow_registration, product_id")
     .eq("escrow_status", "active")
     .not("hedera_schedule_id", "is", null);
 
@@ -66,13 +66,36 @@ export async function GET(request: Request) {
         continue;
       }
 
+      // Look up receiver wallet: product → agent → user.wallet_address
+      let receiverWallet: string | null = null;
+      if (order.product_id) {
+        const { data: product } = await supabaseAdmin
+          .from("products")
+          .select("agent_id")
+          .eq("id", order.product_id)
+          .single();
+        if (product?.agent_id) {
+          const { data: user } = await supabaseAdmin
+            .from("users")
+            .select("wallet_address")
+            .eq("id", product.agent_id)
+            .single();
+          receiverWallet = user?.wallet_address ?? null;
+        }
+      }
+
       // Release on-chain
       const txHash = await releaseEscrowOnBase(order.escrow_registration);
 
       // Record the release
       const { error: updateError } = await supabaseAdmin
         .from("orders")
-        .update({ escrow_status: "released", tx_hash: txHash })
+        .update({
+          escrow_status: "released",
+          tx_hash: txHash,
+          escrow_resolved_to: receiverWallet,
+          escrow_resolved_at: new Date().toISOString(),
+        })
         .eq("id", order.id);
 
       if (updateError) {
