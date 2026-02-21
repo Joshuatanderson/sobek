@@ -1,7 +1,6 @@
 import {
   createPublicClient,
   createWalletClient,
-  defineChain,
   http,
   parseAbi,
   type Chain,
@@ -9,33 +8,20 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
+import { ESCROW_BY_CHAIN } from "@/config/constants";
+
+// Re-import adiTestnet as a viem-compatible chain (wagmi's Chain satisfies viem's)
+import { adiTestnet } from "@/config/constants";
 
 const ESCROW_ABI = parseAbi([
   "function releaseToReceiver(uint256 registration) public payable",
 ]);
 
-const adiTestnet = defineChain({
-  id: 99999,
-  name: "ADI Testnet",
-  nativeCurrency: { name: "ADI", symbol: "ADI", decimals: 18 },
-  rpcUrls: {
-    default: { http: ["https://rpc.ab.testnet.adifoundation.ai/"] },
-  },
-});
-
-const ESCROW_CONFIG: Record<number, { address: `0x${string}`; chain: Chain }> = {
-  [base.id]: {
-    address: process.env.BASE_ESCROW_CONTRACT_ADDRESS as `0x${string}`,
-    chain: base,
-  },
-  [baseSepolia.id]: {
-    address: process.env.BASE_SEPOLIA_ESCROW_CONTRACT_ADDRESS as `0x${string}`,
-    chain: baseSepolia,
-  },
-  [adiTestnet.id]: {
-    address: process.env.ADI_ESCROW_CONTRACT_ADDRESS as `0x${string}`,
-    chain: adiTestnet,
-  },
+/** Map chainId → viem Chain object (for walletClient/publicClient) */
+const CHAIN_BY_ID: Record<number, Chain> = {
+  [base.id]: base,
+  [baseSepolia.id]: baseSepolia,
+  [adiTestnet.id]: adiTestnet,
 };
 
 /**
@@ -47,8 +33,9 @@ export async function releaseEscrow(
   escrowRegistration: number,
   chainId: number = base.id
 ): Promise<Hash> {
-  const config = ESCROW_CONFIG[chainId];
-  if (!config?.address) {
+  const address = ESCROW_BY_CHAIN[chainId];
+  const chain = CHAIN_BY_ID[chainId];
+  if (!address || !chain) {
     throw new Error(`No escrow contract configured for chain ${chainId}`);
   }
 
@@ -60,17 +47,17 @@ export async function releaseEscrow(
 
   const walletClient = createWalletClient({
     account,
-    chain: config.chain,
+    chain,
     transport,
   });
 
   const publicClient = createPublicClient({
-    chain: config.chain,
+    chain,
     transport,
   });
 
   const hash = await walletClient.writeContract({
-    address: config.address,
+    address,
     abi: ESCROW_ABI,
     functionName: "releaseToReceiver",
     args: [BigInt(escrowRegistration)],

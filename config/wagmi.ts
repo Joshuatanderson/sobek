@@ -1,22 +1,15 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
-import { base, type Chain } from "wagmi/chains";
+import { base, baseSepolia } from "wagmi/chains";
 import { http, cookieStorage, createStorage } from "wagmi";
-
-export const adiTestnet = {
-  id: 99999,
-  name: "ADI Testnet",
-  nativeCurrency: { name: "ADI Diamond", symbol: "ADI", decimals: 18 },
-  rpcUrls: {
-    default: { http: ["https://rpc.ab.testnet.adifoundation.ai/"] },
-  },
-} as const satisfies Chain;
+import { adiTestnet } from "./constants";
 
 export const wagmiConfig = getDefaultConfig({
   appName: "Sobek",
   projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
-  chains: [base, adiTestnet],
+  chains: [base, baseSepolia, adiTestnet],
   transports: {
     [base.id]: http(),
+    [baseSepolia.id]: http(),
     [adiTestnet.id]: http(),
   },
   ssr: true,

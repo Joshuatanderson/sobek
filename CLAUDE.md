@@ -10,6 +10,11 @@ Core architecture
 - when a task is ordered it must come w payment. I shouldf get a text or telegram message.
 
 
+## Constants - critical
+- ALL shared constants (chain definitions, contract addresses, token addresses, fee params) live in `config/constants.ts`. NEVER duplicate these values elsewhere.
+- Other config files (wagmi.ts, tokens.ts, lib/base-escrow.ts) MUST import from constants.ts.
+- The only exception is `contracts/hardhat.config.ts` which is a separate toolchain.
+
 ## Database - critical
 - our db structure is fully outlined in utils/supabase/database.types.ts.
 - you SHOULD read this file before any action that reads or writes to the database.

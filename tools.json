@@ -3,12 +3,22 @@
         {
             "type": "client",
             "config": "tool_configs/get_products.json",
-            "id": "tool_7001khwk0ms2ebprhzfytvjpmwbf"
+            "id": "tool_5001khz5c03sehz8xss1yf2h4ypb"
         },
         {
             "type": "client",
             "config": "tool_configs/initiate_swap.json",
             "id": "tool_8601khyd61akemjvr311w07svpxc"
+        },
+        {
+            "type": "client",
+            "config": "tool_configs/navigate_to_page.json",
+            "id": "tool_3001khyn3sqvfev8f0ank25v89gh"
+        },
+        {
+            "type": "client",
+            "config": "tool_configs/initiate_payment.json",
+            "id": "tool_9001khz52ecde968n5z56xw13t9g"
         }
     ]
 }

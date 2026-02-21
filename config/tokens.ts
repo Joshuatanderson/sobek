@@ -1,5 +1,5 @@
 import { base } from "wagmi/chains";
-import { adiTestnet } from "./wagmi";
+import { adiTestnet, BASE_USDC_ADDRESS } from "./constants";
 
 export interface Token {
   symbol: string;
@@ -15,7 +15,7 @@ const BASE_TOKENS: Record<string, Token> = {
   },
   USDC: {
     symbol: "USDC",
-    address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    address: BASE_USDC_ADDRESS,
     decimals: 6,
   },
   WETH: {

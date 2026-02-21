@@ -10,9 +10,9 @@ import {
   waitForTransactionReceipt,
   signTypedData,
 } from "@wagmi/core";
-import { parseUnits, parseEther, formatUnits, erc20Abi } from "viem";
+import { parseUnits, parseEther, formatUnits, erc20Abi, parseAbi, decodeEventLog, zeroAddress } from "viem";
 import { wagmiConfig } from "@/config/wagmi";
-import { USDC_BY_CHAIN, ETH_USD_PRICE } from "@/config/constants";
+import { USDC_BY_CHAIN, ETH_USD_PRICE, ESCROW_BY_CHAIN, PLATFORM_FEE_MULTIPLIER } from "@/config/constants";
 import { TOKENS_BY_CHAIN, SUPPORTED_TOKENS } from "@/config/tokens";
 import { createOrder } from "@/app/product/actions";
 
@@ -20,6 +20,11 @@ export interface Message {
   role: "user" | "agent";
   text: string;
 }
+
+const ESCROW_ABI = parseAbi([
+  "function deposit(address receiver, address token, uint256 value, string details) payable",
+  "event Deposit(address indexed depositor, address indexed receiver, address token, uint256 amount, uint256 indexed registration, string details)",
+]);
 
 const AGENT_ID = "agent_7901khta30m9ehv9b3d5jvdx1qmh";
 
@@ -78,6 +83,11 @@ export function useSobekVoice({ onNavigate }: SobekVoiceOptions = {}) {
 
           const chainId = account.chainId;
           const usdcAddress = chainId ? USDC_BY_CHAIN[chainId] : undefined;
+          const escrowAddress = chainId ? ESCROW_BY_CHAIN[chainId] : undefined;
+
+          if (!escrowAddress) {
+            return "Escrow is not available on the current network. Please switch to Base.";
+          }
 
           if (payment_method === "usdc" && !usdcAddress) {
             return "USDC is not available on the current network. Please switch to Base or use native ETH for payment.";
@@ -101,33 +111,69 @@ export function useSobekVoice({ onNavigate }: SobekVoiceOptions = {}) {
 
           const recipientAddress = user.wallet_address as `0x${string}`;
           const priceUsdc = product.price_usdc;
+          const totalWithFee = priceUsdc * PLATFORM_FEE_MULTIPLIER;
           let txHash: `0x${string}`;
 
           if (payment_method === "usdc") {
-            txHash = await writeContract(wagmiConfig, {
+            const amount = parseUnits(totalWithFee.toFixed(6), 6);
+
+            // Approve escrow contract to spend USDC
+            const approveTx = await writeContract(wagmiConfig, {
               address: usdcAddress!,
               abi: erc20Abi,
-              functionName: "transfer",
-              args: [recipientAddress, parseUnits(priceUsdc.toString(), 6)],
+              functionName: "approve",
+              args: [escrowAddress, amount],
+            });
+            await waitForTransactionReceipt(wagmiConfig, { hash: approveTx });
+
+            // Deposit into escrow
+            txHash = await writeContract(wagmiConfig, {
+              address: escrowAddress,
+              abi: ESCROW_ABI,
+              functionName: "deposit",
+              args: [recipientAddress, usdcAddress!, amount, `Product: ${product.title}`],
             });
           } else {
-            const ethAmount = priceUsdc / ETH_USD_PRICE;
-            txHash = await sendTransaction(wagmiConfig, {
-              to: recipientAddress,
-              value: parseEther(ethAmount.toFixed(18)),
+            const ethAmount = totalWithFee / ETH_USD_PRICE;
+            const amount = parseEther(ethAmount.toFixed(18));
+
+            // Deposit ETH into escrow
+            txHash = await writeContract(wagmiConfig, {
+              address: escrowAddress,
+              abi: ESCROW_ABI,
+              functionName: "deposit",
+              args: [recipientAddress, zeroAddress, amount, `Product: ${product.title}`],
+              value: amount,
             });
           }
 
-          await waitForTransactionReceipt(wagmiConfig, { hash: txHash });
-
-          const currency = payment_method === "usdc" ? "USDC" : "ETH";
-          const orderResult = await createOrder(product_id, txHash, account.address!, currency);
-
-          if (orderResult.error) {
-            return `Payment went through on-chain (tx: ${txHash}), but there was an issue recording the order: ${orderResult.error.message}. The provider will still receive the funds.`;
+          // Wait for deposit tx and parse registration from Deposit event
+          const receipt = await waitForTransactionReceipt(wagmiConfig, { hash: txHash });
+          let registration: number | undefined;
+          for (const log of receipt.logs) {
+            try {
+              const decoded = decodeEventLog({
+                abi: ESCROW_ABI,
+                data: log.data,
+                topics: log.topics,
+              });
+              if (decoded.eventName === "Deposit") {
+                registration = Number(decoded.args.registration);
+                break;
+              }
+            } catch {
+              // Not our event, skip
+            }
           }
 
-          return `Payment successful! The order for "${product.title}" has been placed. Transaction hash: ${txHash}.`;
+          const currency = payment_method === "usdc" ? "USDC" : "ETH";
+          const orderResult = await createOrder(product_id, txHash, account.address!, currency, registration);
+
+          if (orderResult.error) {
+            return `Payment went through on-chain (tx: ${txHash}), but there was an issue recording the order: ${orderResult.error.message}. The funds are held safely in escrow.`;
+          }
+
+          return `Payment successful! The order for "${product.title}" has been placed via escrow. Transaction hash: ${txHash}.`;
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message.split("\n")[0] : "Unknown error";
           return `Payment failed: ${message}. The user may have rejected the transaction or there was a network issue.`;
