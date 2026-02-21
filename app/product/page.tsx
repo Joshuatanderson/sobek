@@ -134,7 +134,7 @@ export default function ProductPage() {
         <CreateProductForm />
       </div>
 
-      <div className="w-full max-w-6xl mt-16 space-y-4 px-4 sm:px-8 pb-8">
+      <div className="w-full max-w-7xl mt-16 space-y-4 px-4 sm:px-8 pb-8">
         <h2 className="text-2xl font-bold text-sobek-gold">Available Services</h2>
         <Suspense fallback={<ProductsTableSkeleton />}>
           <ProductsTable />
