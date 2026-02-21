@@ -27,6 +27,9 @@ error AddressMismatch(address receiverAddress, address winnerAddress);
 /// @dev Error that occurs when sending ether has failed.
 error EtherTransferFail();
 
+/// @dev Error that occurs when an escrow has already been released.
+error AlreadyReleased();
+
 /////////////////////////////////////////////////////////////////
 //////////               ESCROW CONTRACT               //////////
 /////////////////////////////////////////////////////////////////
@@ -78,6 +81,13 @@ contract SobekEscrow is AccessControl {
      * deposit account that lost the bet.
      */
     event Release(uint256 indexed registration);
+
+    /**
+     * @dev Event that is emitted when escrowed funds are released
+     * directly to the receiver (e.g. auto-release after escrow period).
+     * @param registration The registration index of the escrow.
+     */
+    event ReleaseToReceiver(uint256 indexed registration);
 
     /**
      * @dev Event that is emitted when the winner's stake is
@@ -189,5 +199,27 @@ contract SobekEscrow is AccessControl {
         }
 
         emit WinnerRefund(winnerRefundRegistration);
+    }
+
+    /**
+     * @notice Releases escrowed funds directly to the receiver.
+     * @dev One-sided release used for auto-release after escrow period.
+     * @param registration The registration index of the escrow deposit.
+     */
+    function releaseToReceiver(uint256 registration) public payable onlyRole(ARBITER) {
+        Escrow storage escrow = escrows[registration];
+        uint256 amount = escrow.value;
+        if (amount == 0) revert AlreadyReleased();
+
+        // Zero out before external call (CEI pattern — prevents reentrancy + double-spend)
+        escrow.value = 0;
+
+        if (address(escrow.token) == address(0)) {
+            (bool success, ) = escrow.receiver.call{value: amount}("");
+            if (!success) revert EtherTransferFail();
+        } else {
+            escrow.token.safeTransfer(escrow.receiver, amount);
+        }
+        emit ReleaseToReceiver(registration);
     }
 }

@@ -35,6 +35,7 @@ export interface SobekEscrowInterface extends Interface {
       | "grantRole"
       | "hasRole"
       | "release"
+      | "releaseToReceiver"
       | "renounceRole"
       | "revokeRole"
       | "supportsInterface"
@@ -44,6 +45,7 @@ export interface SobekEscrowInterface extends Interface {
     nameOrSignatureOrTopic:
       | "Deposit"
       | "Release"
+      | "ReleaseToReceiver"
       | "RoleAdminChanged"
       | "RoleGranted"
       | "RoleRevoked"
@@ -84,6 +86,10 @@ export interface SobekEscrowInterface extends Interface {
     values: [BigNumberish[], BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "releaseToReceiver",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "renounceRole",
     values: [BytesLike, AddressLike]
   ): string;
@@ -114,6 +120,10 @@ export interface SobekEscrowInterface extends Interface {
   decodeFunctionResult(functionFragment: "grantRole", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "hasRole", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "release", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "releaseToReceiver",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "renounceRole",
     data: BytesLike
@@ -157,6 +167,18 @@ export namespace DepositEvent {
 }
 
 export namespace ReleaseEvent {
+  export type InputTuple = [registration: BigNumberish];
+  export type OutputTuple = [registration: bigint];
+  export interface OutputObject {
+    registration: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace ReleaseToReceiverEvent {
   export type InputTuple = [registration: BigNumberish];
   export type OutputTuple = [registration: bigint];
   export interface OutputObject {
@@ -331,6 +353,12 @@ export interface SobekEscrow extends BaseContract {
     "payable"
   >;
 
+  releaseToReceiver: TypedContractMethod<
+    [registration: BigNumberish],
+    [void],
+    "payable"
+  >;
+
   renounceRole: TypedContractMethod<
     [role: BytesLike, callerConfirmation: AddressLike],
     [void],
@@ -413,6 +441,9 @@ export interface SobekEscrow extends BaseContract {
     "payable"
   >;
   getFunction(
+    nameOrSignature: "releaseToReceiver"
+  ): TypedContractMethod<[registration: BigNumberish], [void], "payable">;
+  getFunction(
     nameOrSignature: "renounceRole"
   ): TypedContractMethod<
     [role: BytesLike, callerConfirmation: AddressLike],
@@ -443,6 +474,13 @@ export interface SobekEscrow extends BaseContract {
     ReleaseEvent.InputTuple,
     ReleaseEvent.OutputTuple,
     ReleaseEvent.OutputObject
+  >;
+  getEvent(
+    key: "ReleaseToReceiver"
+  ): TypedContractEvent<
+    ReleaseToReceiverEvent.InputTuple,
+    ReleaseToReceiverEvent.OutputTuple,
+    ReleaseToReceiverEvent.OutputObject
   >;
   getEvent(
     key: "RoleAdminChanged"
@@ -494,6 +532,17 @@ export interface SobekEscrow extends BaseContract {
       ReleaseEvent.InputTuple,
       ReleaseEvent.OutputTuple,
       ReleaseEvent.OutputObject
+    >;
+
+    "ReleaseToReceiver(uint256)": TypedContractEvent<
+      ReleaseToReceiverEvent.InputTuple,
+      ReleaseToReceiverEvent.OutputTuple,
+      ReleaseToReceiverEvent.OutputObject
+    >;
+    ReleaseToReceiver: TypedContractEvent<
+      ReleaseToReceiverEvent.InputTuple,
+      ReleaseToReceiverEvent.OutputTuple,
+      ReleaseToReceiverEvent.OutputObject
     >;
 
     "RoleAdminChanged(bytes32,bytes32,bytes32)": TypedContractEvent<

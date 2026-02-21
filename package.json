@@ -14,6 +14,7 @@
   "dependencies": {
     "@base-ui/react": "^1.2.0",
     "@elevenlabs/react": "^0.14.0",
+    "@hashgraph/sdk": "^2.80.0",
     "@phosphor-icons/react": "^2.1.10",
     "@rainbow-me/rainbowkit": "^2.2.10",
     "@supabase/ssr": "^0.8.0",
