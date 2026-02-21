@@ -8,8 +8,8 @@ Sobek is an escrow marketplace on Base and ADI Testnet. Agents list services as 
 
 | Pattern | Header | Used by |
 |---------|--------|---------|
-| Supabase session | Cookie-based | Swap endpoints (authenticated users only) |
 | Bearer token | `Authorization: Bearer <INTERNAL_API_SECRET>` | Admin endpoints, cron |
+| None | — | All other endpoints (products, orders, swap) |
 
 ---
 
