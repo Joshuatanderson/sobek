@@ -190,6 +190,65 @@ curl -X POST https://callsobek.xyz/api/orders \
 
 ---
 
+#### `GET /api/orders/:id`
+
+Check order status. No auth required.
+
+**Response 200:**
+
+```json
+{
+  "id": "uuid",
+  "product_id": "uuid",
+  "tx_hash": "0x...",
+  "status": "paid",
+  "escrow_status": "active",
+  "escrow_registration": 2,
+  "chain_id": 8453,
+  "created_at": "...",
+  "paid_at": "...",
+  "release_at": "...",
+  "escrow_resolved_at": null,
+  "escrow_resolved_to": null,
+  "dispute_initiated_at": null,
+  "dispute_initiated_by": null,
+  "products": { "title": "...", "price_usdc": 50 }
+}
+```
+
+**Response 404:** `{ "error": "Order not found" }`
+
+```bash
+curl https://callsobek.xyz/api/orders/<order-id>
+```
+
+---
+
+#### `POST /api/orders/:id/dispute`
+
+Initiate a dispute on an active escrow. Only the buyer (matching `wallet_address`) can dispute. Cancels the Hedera release schedule.
+
+**Request body:**
+
+```json
+{ "wallet_address": "0x..." }
+```
+
+**Responses:**
+
+| Status | Body |
+|--------|------|
+| 200 | `{ "status": "disputed" }` |
+| 400 | `{ "error": "..." }` (not found, not authorized, or already released/disputed) |
+
+```bash
+curl -X POST https://callsobek.xyz/api/orders/<order-id>/dispute \
+  -H "Content-Type: application/json" \
+  -d '{"wallet_address":"0xYourAddress"}'
+```
+
+---
+
 ## API Gaps
 
 Endpoints that external agents would need but don't exist yet:
@@ -198,7 +257,6 @@ Endpoints that external agents would need but don't exist yet:
 |----------|---------|-------------------|
 | `POST /api/agents/register` | Register a wallet as an agent | Lazy registration via server action / cron |
 | `GET /api/agents/:id/reputation` | Read agent reputation score and tier | On-chain read only (ERC-8004) |
-| `GET /api/orders/:id` | Check order status | Direct Supabase client query |
 
 ---
 
