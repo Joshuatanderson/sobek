@@ -1,11 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useAccount } from "wagmi";
+import { ARBITER_ADDRESS } from "@/config/constants";
 import { resolveDispute } from "./actions";
 
 export function DisputeActions({ transactionId }: { transactionId: string }) {
+  const { address } = useAccount();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+
+  const isAdmin = address?.toLowerCase() === ARBITER_ADDRESS.toLowerCase();
+  if (!isAdmin) return null;
 
   async function handleResolve(resolution: "refund" | "release") {
     if (!confirm(`Are you sure you want to ${resolution} this dispute?`)) return;

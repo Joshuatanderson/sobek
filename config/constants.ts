@@ -32,6 +32,9 @@ export const PLATFORM_FEE_MULTIPLIER = 1.05;
 // Replace with a price oracle (e.g. Chainlink) when accuracy matters.
 export const ETH_USD_PRICE = 1950;
 
+/** Arbiter / admin wallet — owns the escrow contracts */
+export const ARBITER_ADDRESS = "0xcdd46667E9Ce3db1Bd978DF806479BBE615E0523" as const;
+
 /** ERC-8004 on-chain reputation (Base Sepolia) */
 export const ERC8004_IDENTITY_REGISTRY = "0x8004A818BFB912233c491871b3d84c89A494BD9e" as const;
 export const ERC8004_REPUTATION_REGISTRY = "0x8004B663056A597Dffe9eCcC1965A193B7388713" as const;

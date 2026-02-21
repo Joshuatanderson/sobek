@@ -97,7 +97,7 @@ export function BuyProductButton({
   }
 
   if (!usdcAddress || !escrowAddress) {
-    return <span className="text-sobek-green-light/60 text-sm">Not available on this network</span>;
+    return null;
   }
 
   if (status === "success") {
