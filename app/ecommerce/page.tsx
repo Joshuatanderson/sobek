@@ -353,17 +353,11 @@ export default function EcommerceHome() {
   return (
     <>
       <style>{`
-        .ecommerce-page *, .ecommerce-page { cursor: auto !important; }
-        .ecommerce-page button, .ecommerce-page a, .ecommerce-page select,
-        .ecommerce-page label, .ecommerce-page input[type="checkbox"],
-        .ecommerce-page input[type="radio"],
-        .ecommerce-page [role="button"] { cursor: pointer !important; }
-        .ecommerce-page input[type="text"] { cursor: text !important; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
       `}</style>
 
       <div
-        className="ecommerce-page relative z-10 min-h-screen bg-[#f5f5f5] text-gray-900"
+        className="relative z-10 min-h-screen bg-[#f5f5f5] text-gray-900"
         style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}
       >
         {/* ── Top banner bar ── */}

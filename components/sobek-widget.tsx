@@ -21,13 +21,6 @@ export function SobekWidget() {
 
   return (
     <>
-      {/* Cursor override for widget elements (global cursor:none !important) */}
-      <style>{`
-        .sobek-widget-root, .sobek-widget-root * { cursor: auto !important; }
-        .sobek-widget-root button, .sobek-widget-root a,
-        .sobek-widget-root [role="button"] { cursor: pointer !important; }
-      `}</style>
-
       {/* Launcher pill */}
       <button
         onClick={() => setOpen((o) => !o)}

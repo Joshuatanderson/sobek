@@ -58,16 +58,7 @@ export default function EcommerceDemo() {
 
   return (
     <>
-      {/* Override the global cursor:none from globals.css for this demo page */}
-      <style>{`
-        .ecommerce-demo *, .ecommerce-demo { cursor: auto !important; }
-        .ecommerce-demo button, .ecommerce-demo a, .ecommerce-demo select,
-        .ecommerce-demo label, .ecommerce-demo input[type="checkbox"],
-        .ecommerce-demo input[type="radio"],
-        .ecommerce-demo [role="button"] { cursor: pointer !important; }
-        .ecommerce-demo input[type="text"] { cursor: text !important; }
-      `}</style>
-    <div className="ecommerce-demo relative z-10 min-h-screen bg-white text-gray-900" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+    <div className="relative z-10 min-h-screen bg-white text-gray-900" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
       {/* Top banner bar */}
       <div className="bg-[#1a1a1a] text-white text-xs">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-2">
@@ -108,11 +99,9 @@ export default function EcommerceDemo() {
                 type="text"
                 placeholder="What are you looking for?"
                 className="w-full px-4 py-2.5 rounded-l-md bg-white text-gray-900 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-[#f5c518]"
-                style={{ cursor: "text" }}
               />
               <button
                 className="px-4 bg-[#f5c518] hover:bg-[#e6b800] rounded-r-md transition-colors"
-                style={{ cursor: "pointer" }}
               >
                 <MagnifyingGlass size={20} weight="bold" className="text-[#1a1a1a]" />
               </button>
@@ -121,15 +110,15 @@ export default function EcommerceDemo() {
 
           {/* Account / Wishlist / Cart */}
           <div className="flex items-center gap-6 text-white">
-            <button className="flex flex-col items-center gap-0.5 text-xs hover:text-[#f5c518] transition-colors" style={{ cursor: "pointer" }}>
+            <button className="flex flex-col items-center gap-0.5 text-xs hover:text-[#f5c518] transition-colors" >
               <User size={22} />
               <span className="hidden sm:block">YOUR ACCOUNT</span>
             </button>
-            <button className="flex flex-col items-center gap-0.5 text-xs hover:text-[#f5c518] transition-colors" style={{ cursor: "pointer" }}>
+            <button className="flex flex-col items-center gap-0.5 text-xs hover:text-[#f5c518] transition-colors" >
               <Heart size={22} />
               <span className="hidden sm:block">WISHLIST</span>
             </button>
-            <button className="relative flex flex-col items-center gap-0.5 text-xs hover:text-[#f5c518] transition-colors" style={{ cursor: "pointer" }}>
+            <button className="relative flex flex-col items-center gap-0.5 text-xs hover:text-[#f5c518] transition-colors" >
               <ShoppingCart size={22} />
               <span className="hidden sm:block">YOUR CART</span>
               <span className="absolute -top-1 -right-2 bg-[#f5c518] text-[#1a1a1a] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
@@ -151,16 +140,15 @@ export default function EcommerceDemo() {
                   ? "bg-[#f5c518] text-[#1a1a1a]"
                   : "text-white hover:bg-[#3a3a3a]"
               }`}
-              style={{ cursor: "pointer" }}
             >
               {i === 0 && <List size={16} weight="bold" />}
               {cat}
             </button>
           ))}
-          <button className="px-4 py-3 text-xs font-semibold tracking-wide text-red-400 hover:bg-[#3a3a3a] whitespace-nowrap transition-colors" style={{ cursor: "pointer" }}>
+          <button className="px-4 py-3 text-xs font-semibold tracking-wide text-red-400 hover:bg-[#3a3a3a] whitespace-nowrap transition-colors" >
             NEW RELEASES
           </button>
-          <button className="px-4 py-3 text-xs font-semibold tracking-wide text-red-400 hover:bg-[#3a3a3a] whitespace-nowrap transition-colors" style={{ cursor: "pointer" }}>
+          <button className="px-4 py-3 text-xs font-semibold tracking-wide text-red-400 hover:bg-[#3a3a3a] whitespace-nowrap transition-colors" >
             CLEARANCE SALE
           </button>
         </div>
@@ -172,7 +160,7 @@ export default function EcommerceDemo() {
           {BREADCRUMB.map((crumb, i) => (
             <span key={crumb} className="flex items-center gap-1">
               {i > 0 && <CaretRight size={12} className="text-gray-400" />}
-              <span className={`hover:text-[#f5c518] transition-colors ${i === BREADCRUMB.length - 1 ? "text-gray-700" : ""}`} style={{ cursor: "pointer" }}>
+              <span className={`hover:text-[#f5c518] transition-colors ${i === BREADCRUMB.length - 1 ? "text-gray-700" : ""}`} >
                 {crumb}
               </span>
             </span>
@@ -238,7 +226,7 @@ export default function EcommerceDemo() {
               </span>
             </div>
 
-            <button className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#f5c518] transition-colors" style={{ cursor: "pointer" }}>
+            <button className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#f5c518] transition-colors" >
               <ShareNetwork size={16} />
               Share
             </button>
@@ -251,7 +239,7 @@ export default function EcommerceDemo() {
                   <p className="text-sm text-gray-500 mt-0.5">
                     Effortless warranty claims with global coverage; shipping
                     costs are on us*.{" "}
-                    <span className="text-blue-600 hover:underline" style={{ cursor: "pointer" }}>
+                    <span className="text-blue-600 hover:underline" >
                       Learn more
                     </span>
                   </p>
@@ -263,7 +251,6 @@ export default function EcommerceDemo() {
               <button
                 onClick={() => setWishlisted(!wishlisted)}
                 className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-500 transition-colors"
-                style={{ cursor: "pointer" }}
               >
                 <Heart
                   size={20}
@@ -271,8 +258,8 @@ export default function EcommerceDemo() {
                   className={wishlisted ? "text-red-500" : ""}
                 />
               </button>
-              <label className="flex items-center gap-1.5 text-sm text-gray-500" style={{ cursor: "pointer" }}>
-                <input type="checkbox" className="accent-[#f5c518]" style={{ cursor: "pointer" }} />
+              <label className="flex items-center gap-1.5 text-sm text-gray-500" >
+                <input type="checkbox" className="accent-[#f5c518]"  />
                 Compare
               </label>
             </div>
@@ -289,7 +276,7 @@ export default function EcommerceDemo() {
             </div>
 
             <p className="text-sm text-gray-400 flex items-center gap-1">
-              <input type="checkbox" className="accent-gray-400" style={{ cursor: "pointer" }} />
+              <input type="checkbox" className="accent-gray-400"  />
               Report incorrect or inappropriate product information.
             </p>
           </div>
@@ -328,7 +315,6 @@ export default function EcommerceDemo() {
                     className={`flex items-center gap-2 text-sm p-2 rounded transition-colors ${
                       selectedWarranty === i ? "bg-[#f5c518]/10" : "hover:bg-gray-50"
                     }`}
-                    style={{ cursor: "pointer" }}
                   >
                     <input
                       type="radio"
@@ -336,7 +322,6 @@ export default function EcommerceDemo() {
                       checked={selectedWarranty === i}
                       onChange={() => setSelectedWarranty(i)}
                       className="accent-[#76b900]"
-                      style={{ cursor: "pointer" }}
                     />
                     <span className="flex-1">{opt.label}</span>
                     <span className={`font-semibold ${opt.default ? "text-gray-900" : "text-gray-600"}`}>
@@ -356,7 +341,6 @@ export default function EcommerceDemo() {
                     value={quantity}
                     onChange={(e) => setQuantity(Number(e.target.value))}
                     className="appearance-none w-16 px-3 py-2.5 border border-gray-300 rounded text-sm bg-white pr-8 focus:outline-none focus:ring-2 focus:ring-[#f5c518]"
-                    style={{ cursor: "pointer" }}
                   >
                     {[1, 2, 3, 4, 5].map((n) => (
                       <option key={n} value={n}>{n}</option>
@@ -366,7 +350,6 @@ export default function EcommerceDemo() {
                 </div>
                 <button
                   className="flex-1 flex items-center justify-center gap-2 bg-[#f5c518] hover:bg-[#e6b800] text-[#1a1a1a] font-bold py-2.5 px-6 rounded transition-colors text-sm"
-                  style={{ cursor: "pointer" }}
                 >
                   <ShoppingCart size={18} weight="fill" />
                   Add To Cart
@@ -387,7 +370,7 @@ export default function EcommerceDemo() {
                   Available In
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-blue-600 hover:underline" style={{ cursor: "pointer" }}>
+                  <span className="text-blue-600 hover:underline" >
                     Showroom - Dubai, Al Quoz
                   </span>
                   <div className="flex items-center gap-2">
@@ -411,7 +394,7 @@ export default function EcommerceDemo() {
                     <Truck size={18} className="text-gray-600" />
                     Deliver To Dubai
                   </div>
-                  <button className="text-sm text-blue-600 flex items-center gap-1" style={{ cursor: "pointer" }}>
+                  <button className="text-sm text-blue-600 flex items-center gap-1" >
                     Change <CaretDown size={12} />
                   </button>
                 </div>
@@ -502,7 +485,6 @@ export default function EcommerceDemo() {
           </div>
           <button
             className="mt-4 px-6 py-2 text-sm font-semibold border border-[#f5c518] text-[#1a1a1a] rounded hover:bg-[#f5c518]/10 transition-colors"
-            style={{ cursor: "pointer" }}
           >
             Write a Review
           </button>
@@ -515,36 +497,36 @@ export default function EcommerceDemo() {
           <div>
             <h4 className="text-white font-semibold mb-3">Shop</h4>
             <ul className="space-y-2">
-              <li style={{ cursor: "pointer" }} className="hover:text-[#f5c518] transition-colors">Computers & Laptops</li>
-              <li style={{ cursor: "pointer" }} className="hover:text-[#f5c518] transition-colors">Office & Networking</li>
-              <li style={{ cursor: "pointer" }} className="hover:text-[#f5c518] transition-colors">Mobiles & Tablets</li>
-              <li style={{ cursor: "pointer" }} className="hover:text-[#f5c518] transition-colors">Electronics</li>
+              <li  className="hover:text-[#f5c518] transition-colors">Computers & Laptops</li>
+              <li  className="hover:text-[#f5c518] transition-colors">Office & Networking</li>
+              <li  className="hover:text-[#f5c518] transition-colors">Mobiles & Tablets</li>
+              <li  className="hover:text-[#f5c518] transition-colors">Electronics</li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-semibold mb-3">Customer Service</h4>
             <ul className="space-y-2">
-              <li style={{ cursor: "pointer" }} className="hover:text-[#f5c518] transition-colors">Contact Us</li>
-              <li style={{ cursor: "pointer" }} className="hover:text-[#f5c518] transition-colors">Returns & Refunds</li>
-              <li style={{ cursor: "pointer" }} className="hover:text-[#f5c518] transition-colors">Warranty</li>
-              <li style={{ cursor: "pointer" }} className="hover:text-[#f5c518] transition-colors">FAQ</li>
+              <li  className="hover:text-[#f5c518] transition-colors">Contact Us</li>
+              <li  className="hover:text-[#f5c518] transition-colors">Returns & Refunds</li>
+              <li  className="hover:text-[#f5c518] transition-colors">Warranty</li>
+              <li  className="hover:text-[#f5c518] transition-colors">FAQ</li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-semibold mb-3">About</h4>
             <ul className="space-y-2">
-              <li style={{ cursor: "pointer" }} className="hover:text-[#f5c518] transition-colors">About Microless</li>
-              <li style={{ cursor: "pointer" }} className="hover:text-[#f5c518] transition-colors">Careers</li>
-              <li style={{ cursor: "pointer" }} className="hover:text-[#f5c518] transition-colors">Sell on Microless</li>
+              <li  className="hover:text-[#f5c518] transition-colors">About Microless</li>
+              <li  className="hover:text-[#f5c518] transition-colors">Careers</li>
+              <li  className="hover:text-[#f5c518] transition-colors">Sell on Microless</li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-semibold mb-3">Follow Us</h4>
             <ul className="space-y-2">
-              <li style={{ cursor: "pointer" }} className="hover:text-[#f5c518] transition-colors">Facebook</li>
-              <li style={{ cursor: "pointer" }} className="hover:text-[#f5c518] transition-colors">Twitter</li>
-              <li style={{ cursor: "pointer" }} className="hover:text-[#f5c518] transition-colors">Instagram</li>
-              <li style={{ cursor: "pointer" }} className="hover:text-[#f5c518] transition-colors">YouTube</li>
+              <li  className="hover:text-[#f5c518] transition-colors">Facebook</li>
+              <li  className="hover:text-[#f5c518] transition-colors">Twitter</li>
+              <li  className="hover:text-[#f5c518] transition-colors">Instagram</li>
+              <li  className="hover:text-[#f5c518] transition-colors">YouTube</li>
             </ul>
           </div>
         </div>

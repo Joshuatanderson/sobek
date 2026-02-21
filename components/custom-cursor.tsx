@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 const INTERACTIVE_SELECTOR = "a, button, [role='button'], input, textarea, select, label, [data-clickable]";
-const EXCLUDED_PATHS = ["/ecommerce-demo"];
+const EXCLUDED_PATHS = ["/ecommerce", "/agent"];
 
 // Cursor arrow shape — tip at (0,0), classic pointer silhouette
 const ARROW_PATH = "M 1 1 L 1 16.5 L 5 13 L 8.5 19.5 L 11 18.5 L 7.5 12 L 13 11.5 Z";
