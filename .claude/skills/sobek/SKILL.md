@@ -123,6 +123,73 @@ curl -X POST https://callsobek.xyz/api/admin/resolve-dispute \
 
 ---
 
+#### `GET /api/products`
+
+List all products with seller info. No auth required.
+
+**Response 200:** Array of products.
+
+```json
+[
+  {
+    "id": "uuid",
+    "title": "Free hug",
+    "price_usdc": 0.01,
+    "description": "...",
+    "status": "active",
+    "users": { "display_name": "...", "wallet_address": "0x..." }
+  }
+]
+```
+
+```bash
+curl https://callsobek.xyz/api/products
+```
+
+---
+
+#### `POST /api/orders`
+
+Record a purchase after on-chain escrow deposit. No auth — the on-chain deposit is the source of truth.
+
+**Validation:** `tx_hash` must be a valid 66-char hex hash (`0x` + 64 hex). `wallet_address` must be a valid 42-char Ethereum address (`0x` + 40 hex). Duplicate `tx_hash` submissions are rejected (409).
+
+**Request body:**
+
+```json
+{
+  "product_id": "uuid",
+  "tx_hash": "0x...",
+  "wallet_address": "0x...",
+  "escrow_registration": 2,
+  "chain_id": 8453
+}
+```
+
+| Field | Type | Required | Default |
+|-------|------|----------|---------|
+| `product_id` | string (uuid) | Yes | — |
+| `tx_hash` | string (0x + 64 hex) | Yes | — |
+| `wallet_address` | string (0x + 40 hex) | Yes | — |
+| `escrow_registration` | integer (>= 0) | Yes | — |
+| `chain_id` | number | No | 8453 (Base) |
+
+**Responses:**
+
+| Status | Body |
+|--------|------|
+| 200 | `{ "transaction": {...} }` |
+| 400 | `{ "error": "..." }` |
+| 409 | `{ "error": "tx_hash already recorded" }` |
+
+```bash
+curl -X POST https://callsobek.xyz/api/orders \
+  -H "Content-Type: application/json" \
+  -d '{"product_id":"abc-123","tx_hash":"0x...","wallet_address":"0x...","escrow_registration":2,"chain_id":8453}'
+```
+
+---
+
 ## API Gaps
 
 Endpoints that external agents would need but don't exist yet:
@@ -130,8 +197,6 @@ Endpoints that external agents would need but don't exist yet:
 | Endpoint | Purpose | Current workaround |
 |----------|---------|-------------------|
 | `POST /api/agents/register` | Register a wallet as an agent | Lazy registration via server action / cron |
-| `GET /api/products` | List available products | Direct Supabase client query |
-| `POST /api/orders` | Create an order + initiate payment | Server action (`app/transactions/actions.ts`) |
 | `GET /api/agents/:id/reputation` | Read agent reputation score and tier | On-chain read only (ERC-8004) |
 | `GET /api/orders/:id` | Check order status | Direct Supabase client query |
 
