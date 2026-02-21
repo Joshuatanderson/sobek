@@ -70,10 +70,11 @@ export function CustomCursor() {
   return (
     <svg
       ref={arrowRef}
-      className="fixed top-0 left-0 z-[9999] pointer-events-none"
+      className="fixed top-0 left-0 pointer-events-none"
       viewBox="0 0 14 21"
       fill="none"
       style={{
+        zIndex: 2147483647,
         opacity: visible ? 1 : 0,
         width: styles.w,
         height: styles.h,
