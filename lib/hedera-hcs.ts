@@ -11,6 +11,40 @@ export interface TierTransitionMessage {
   timestamp: string;
 }
 
+export interface ReputationEventMessage {
+  type: "reputation_event";
+  wallet: string;
+  delta: number;
+  reason: string;
+  amount_usd: number;
+  transaction_id: string;
+  timestamp: string;
+}
+
+/**
+ * Log a reputation event to Hedera Consensus Service.
+ * Returns the topic sequence number for storage in the DB.
+ * Throws on failure — callers decide how to handle.
+ */
+export async function logReputationEvent(
+  msg: Omit<ReputationEventMessage, "type">
+): Promise<number> {
+  const topicId = process.env.HEDERA_REPUTATION_TOPIC_ID;
+  if (!topicId) {
+    throw new Error("HEDERA_REPUTATION_TOPIC_ID not set");
+  }
+
+  const client = getHederaClient();
+  const tx = new TopicMessageSubmitTransaction()
+    .setTopicId(topicId)
+    .setMessage(JSON.stringify({ type: "reputation_event", ...msg }));
+
+  const response = await tx.execute(client);
+  const receipt = await response.getReceipt(client);
+
+  return Number(receipt.topicSequenceNumber);
+}
+
 /**
  * Log a reputation tier transition to Hedera Consensus Service.
  * Throws on failure — callers decide how to handle.

@@ -6,7 +6,7 @@ import {
   calculateSuccessSeller,
   getSellerMrate,
 } from "@/lib/reputation";
-import { logTierTransition } from "@/lib/hedera-hcs";
+import { logTierTransition, logReputationEvent } from "@/lib/hedera-hcs";
 import { giveFeedback } from "@/lib/erc8004";
 
 export const dynamic = "force-dynamic";
@@ -125,17 +125,36 @@ export async function GET(request: Request) {
         continue;
       }
 
-      // --- Reputation event + HCS tier logging ---
+      // --- Reputation event + HCS logging ---
       if (receiverWallet && product?.price_usdc) {
         const delta = calculateSuccessSeller(product.price_usdc);
 
-        await supabaseAdmin.from("reputation_events").insert({
+        const { data: repEvent } = await supabaseAdmin.from("reputation_events").insert({
           wallet: receiverWallet,
           delta,
           reason: "transaction_released",
           transaction_id: transaction.id,
           amount_usd: product.price_usdc,
-        });
+        }).select("id").single();
+
+        // Log to Hedera HCS (best-effort)
+        if (repEvent) {
+          try {
+            const seq = await logReputationEvent({
+              wallet: receiverWallet,
+              delta,
+              reason: "transaction_released",
+              amount_usd: product.price_usdc,
+              transaction_id: transaction.id,
+              timestamp: new Date().toISOString(),
+            });
+            await supabaseAdmin.from("reputation_events")
+              .update({ hcs_sequence: seq })
+              .eq("id", repEvent.id);
+          } catch (hcsErr) {
+            console.error("Non-fatal: HCS reputation log failed:", hcsErr);
+          }
+        }
 
         // Check Mrate AFTER — transaction is now 'released', so success rate may have changed
         const after = await getSellerMrate(supabaseAdmin, receiverWallet);

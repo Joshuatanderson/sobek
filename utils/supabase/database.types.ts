@@ -138,6 +138,7 @@ export type Database = {
           amount_usd: number | null
           created_at: string | null
           delta: number
+          hcs_sequence: number | null
           id: number
           transaction_id: string | null
           reason: string
@@ -147,6 +148,7 @@ export type Database = {
           amount_usd?: number | null
           created_at?: string | null
           delta: number
+          hcs_sequence?: number | null
           id?: number
           transaction_id?: string | null
           reason: string
@@ -156,6 +158,7 @@ export type Database = {
           amount_usd?: number | null
           created_at?: string | null
           delta?: number
+          hcs_sequence?: number | null
           id?: number
           transaction_id?: string | null
           reason?: string

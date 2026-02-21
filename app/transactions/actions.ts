@@ -7,7 +7,7 @@ import {
   calculateDisputeLossBuyer,
   getSellerMrate,
 } from "@/lib/reputation";
-import { logTierTransition } from "@/lib/hedera-hcs";
+import { logTierTransition, logReputationEvent } from "@/lib/hedera-hcs";
 import { notifyUser } from "@/utils/telegram";
 import { revalidatePath } from "next/cache";
 
@@ -107,22 +107,47 @@ export async function resolveDispute(
 
   // Reputation
   if (product?.price_usdc) {
+    let repWallet: string | null = null;
+    let repDelta = 0;
+    let repReason = "";
+
     if (resolution === "refund" && sellerWallet) {
-      await supabaseAdmin.from("reputation_events").insert({
-        wallet: sellerWallet,
-        delta: calculateDisputeLossSeller(product.price_usdc),
-        reason: "dispute_refund",
-        transaction_id: transactionId,
-        amount_usd: product.price_usdc,
-      });
+      repWallet = sellerWallet;
+      repDelta = calculateDisputeLossSeller(product.price_usdc);
+      repReason = "dispute_refund";
     } else if (resolution === "release" && buyerWallet) {
-      await supabaseAdmin.from("reputation_events").insert({
-        wallet: buyerWallet,
-        delta: calculateDisputeLossBuyer(product.price_usdc),
-        reason: "dispute_release",
+      repWallet = buyerWallet;
+      repDelta = calculateDisputeLossBuyer(product.price_usdc);
+      repReason = "dispute_release";
+    }
+
+    if (repWallet) {
+      const { data: repEvent } = await supabaseAdmin.from("reputation_events").insert({
+        wallet: repWallet,
+        delta: repDelta,
+        reason: repReason,
         transaction_id: transactionId,
         amount_usd: product.price_usdc,
-      });
+      }).select("id").single();
+
+      // Log to Hedera HCS (best-effort)
+      if (repEvent) {
+        try {
+          const seq = await logReputationEvent({
+            wallet: repWallet,
+            delta: repDelta,
+            reason: repReason,
+            amount_usd: product.price_usdc,
+            transaction_id: transactionId,
+            timestamp: new Date().toISOString(),
+          });
+          await supabaseAdmin.from("reputation_events")
+            .update({ hcs_sequence: seq })
+            .eq("id", repEvent.id);
+        } catch (hcsErr) {
+          console.error("Non-fatal: HCS reputation log failed:", hcsErr);
+        }
+      }
     }
   }
 
