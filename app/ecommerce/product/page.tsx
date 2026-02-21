@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { SobekWidget } from "@/components/sobek-widget";
+
 import {
   MagnifyingGlass,
   User,
@@ -553,7 +553,6 @@ export default function EcommerceDemo() {
         </div>
       </footer>
     </div>
-    <SobekWidget />
     </>
   );
 }

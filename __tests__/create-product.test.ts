@@ -23,7 +23,7 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
-import { createTask } from "@/app/task/actions";
+import { createProduct } from "@/app/product/actions";
 
 function formData(fields: Record<string, string>): FormData {
   const fd = new FormData();
@@ -38,15 +38,15 @@ beforeEach(() => {
     error: null,
   });
   mockInsert.mockReturnValue({
-    select: () => Promise.resolve({ data: [{ id: "task-1" }], error: null }),
+    select: () => Promise.resolve({ data: [{ id: "product-1" }], error: null }),
   });
 });
 
-describe("createTask", () => {
+describe("createProduct", () => {
   it("rejects unauthenticated users", async () => {
     mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
 
-    const result = await createTask(
+    const result = await createProduct(
       null,
       formData({ title: "X", description: "Y", price_usdc: "10" })
     );
@@ -55,7 +55,7 @@ describe("createTask", () => {
   });
 
   it("rejects missing title", async () => {
-    const result = await createTask(
+    const result = await createProduct(
       null,
       formData({ title: "", description: "Y", price_usdc: "10" })
     );
@@ -63,7 +63,7 @@ describe("createTask", () => {
   });
 
   it("rejects non-numeric price", async () => {
-    const result = await createTask(
+    const result = await createProduct(
       null,
       formData({ title: "X", description: "Y", price_usdc: "abc" })
     );
@@ -71,7 +71,7 @@ describe("createTask", () => {
   });
 
   it("accepts valid input", async () => {
-    const result = await createTask(
+    const result = await createProduct(
       null,
       formData({ title: "Logo", description: "Make a logo", price_usdc: "25" })
     );
@@ -86,7 +86,7 @@ describe("createTask", () => {
   });
 
   it("rejects negative price", async () => {
-    const result = await createTask(
+    const result = await createProduct(
       null,
       formData({ title: "X", description: "Y", price_usdc: "-50" })
     );
@@ -94,7 +94,7 @@ describe("createTask", () => {
   });
 
   it("rejects zero price", async () => {
-    const result = await createTask(
+    const result = await createProduct(
       null,
       formData({ title: "X", description: "Y", price_usdc: "0" })
     );

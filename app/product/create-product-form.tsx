@@ -3,21 +3,21 @@
 import { useActionState } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useWalletAuth } from "@/hooks/useWalletAuth";
-import { createTask } from "./actions";
+import { createProduct } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
-export function CreateTaskForm() {
+export function CreateProductForm() {
   const { isConnected } = useWalletAuth();
-  const [state, formAction, isPending] = useActionState(createTask, null);
+  const [state, formAction, isPending] = useActionState(createProduct, null);
 
   return (
     <>
       {!isConnected ? (
         <div className="rounded-lg border border-sobek-forest/30 bg-sobek-forest/50 p-6 space-y-4">
-          <p className="text-sobek-green-light/80">Connect your wallet to create a task.</p>
+          <p className="text-sobek-green-light/80">Connect your wallet to create a product.</p>
           <ConnectButton />
         </div>
       ) : (
@@ -57,7 +57,7 @@ export function CreateTaskForm() {
           </div>
 
           <Button type="submit" disabled={isPending} size="lg" className="w-full">
-            {isPending ? "Creating..." : "Create Task"}
+            {isPending ? "Creating..." : "Create Product"}
           </Button>
         </form>
       )}

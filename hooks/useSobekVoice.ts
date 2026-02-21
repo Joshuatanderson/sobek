@@ -1,7 +1,7 @@
 "use client";
 
 import { useConversation } from "@elevenlabs/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import {
   getAccount,
@@ -12,9 +12,9 @@ import {
 } from "@wagmi/core";
 import { parseUnits, parseEther, formatUnits, erc20Abi } from "viem";
 import { wagmiConfig } from "@/config/wagmi";
-import { BASE_USDC_ADDRESS, ETH_USD_PRICE } from "@/config/constants";
-import { SUPPORTED_TOKENS } from "@/config/tokens";
-import { createOrder } from "@/app/task/actions";
+import { USDC_BY_CHAIN, ETH_USD_PRICE } from "@/config/constants";
+import { TOKENS_BY_CHAIN, SUPPORTED_TOKENS } from "@/config/tokens";
+import { createOrder } from "@/app/product/actions";
 
 export interface Message {
   role: "user" | "agent";
@@ -23,64 +23,89 @@ export interface Message {
 
 const AGENT_ID = "agent_7901khta30m9ehv9b3d5jvdx1qmh";
 
-export function useSobekVoice() {
+const PAGES = [
+  { id: "home", keywords: ["home", "store", "storefront", "homepage", "main"], path: "/ecommerce" },
+  { id: "h100", keywords: ["h100", "nvidia", "gpu", "tensor", "graphics card"], path: "/ecommerce/product" },
+];
+
+interface SobekVoiceOptions {
+  onNavigate?: (path: string) => void;
+}
+
+export function useSobekVoice({ onNavigate }: SobekVoiceOptions = {}) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [muted, setMuted] = useState(false);
+  const onNavigateRef = useRef(onNavigate);
+  onNavigateRef.current = onNavigate;
 
   const conversation = useConversation({
     micMuted: muted,
     clientTools: {
-      get_tasks: async () => {
+      navigate_to_page: async ({ query }: { query: string }) => {
+        const q = query.toLowerCase();
+        const match = PAGES.find((p) => p.keywords.some((k) => q.includes(k)));
+        if (!match) return "No matching page found. Do not mention this to the user.";
+        onNavigateRef.current?.(match.path);
+        return "Done. Do not mention this navigation to the user.";
+      },
+      get_products: async () => {
         try {
           const supabase = createClient();
           const { data, error } = await supabase
-            .from("tasks")
+            .from("products")
             .select("id, title, description, price_usdc, status, users:agent_id(display_name, telegram_handle)")
             .order("created_at", { ascending: false });
 
-          if (error) return "Sorry, I couldn't fetch the tasks right now.";
-          if (!data || data.length === 0) return "There are no tasks available right now.";
+          if (error) return "Sorry, I couldn't fetch the products right now.";
+          if (!data || data.length === 0) return "There are no products available right now.";
 
           const lines = data.map((t) => {
             const user = t.users as { display_name: string | null; telegram_handle: string | null } | null;
             const creator = user?.display_name || user?.telegram_handle || "Anonymous";
-            return `[Task ID: ${t.id}] ${t.title} — ${t.description}. Price: $${t.price_usdc} USDC. Status: ${t.status}. Posted by ${creator}.`;
+            return `[Product ID: ${t.id}] ${t.title} — ${t.description}. Price: $${t.price_usdc} USDC. Status: ${t.status}. Posted by ${creator}.`;
           });
-          return `There are ${data.length} tasks available:\n${lines.join("\n")}`;
+          return `There are ${data.length} products available:\n${lines.join("\n")}`;
         } catch {
-          return "Sorry, something went wrong fetching tasks.";
+          return "Sorry, something went wrong fetching products.";
         }
       },
-      initiate_payment: async ({ task_id, payment_method }: { task_id: string; payment_method: "usdc" | "native" }) => {
+      initiate_payment: async ({ product_id, payment_method }: { product_id: string; payment_method: "usdc" | "native" }) => {
         try {
           const account = getAccount(wagmiConfig);
           if (!account.isConnected || !account.address) {
             return "The user's wallet is not connected. Please ask them to connect their wallet first using the button on the page.";
           }
 
-          const supabase = createClient();
-          const { data: task, error: taskError } = await supabase
-            .from("tasks")
-            .select("id, title, price_usdc, users:agent_id(wallet_address)")
-            .eq("id", task_id)
-            .single();
+          const chainId = account.chainId;
+          const usdcAddress = chainId ? USDC_BY_CHAIN[chainId] : undefined;
 
-          if (taskError || !task) {
-            return "I couldn't find that task. It may have been removed.";
+          if (payment_method === "usdc" && !usdcAddress) {
+            return "USDC is not available on the current network. Please switch to Base or use native ETH for payment.";
           }
 
-          const user = task.users as { wallet_address: string } | null;
+          const supabase = createClient();
+          const { data: product, error: productError } = await supabase
+            .from("products")
+            .select("id, title, price_usdc, users:agent_id(wallet_address)")
+            .eq("id", product_id)
+            .single();
+
+          if (productError || !product) {
+            return "I couldn't find that product. It may have been removed.";
+          }
+
+          const user = product.users as { wallet_address: string } | null;
           if (!user?.wallet_address) {
-            return "The task provider hasn't set up a wallet address to receive payments.";
+            return "The product provider hasn't set up a wallet address to receive payments.";
           }
 
           const recipientAddress = user.wallet_address as `0x${string}`;
-          const priceUsdc = task.price_usdc;
+          const priceUsdc = product.price_usdc;
           let txHash: `0x${string}`;
 
           if (payment_method === "usdc") {
             txHash = await writeContract(wagmiConfig, {
-              address: BASE_USDC_ADDRESS,
+              address: usdcAddress!,
               abi: erc20Abi,
               functionName: "transfer",
               args: [recipientAddress, parseUnits(priceUsdc.toString(), 6)],
@@ -96,13 +121,13 @@ export function useSobekVoice() {
           await waitForTransactionReceipt(wagmiConfig, { hash: txHash });
 
           const currency = payment_method === "usdc" ? "USDC" : "ETH";
-          const orderResult = await createOrder(task_id, txHash, account.address!, currency);
+          const orderResult = await createOrder(product_id, txHash, account.address!, currency);
 
           if (orderResult.error) {
             return `Payment went through on-chain (tx: ${txHash}), but there was an issue recording the order: ${orderResult.error.message}. The provider will still receive the funds.`;
           }
 
-          return `Payment successful! The order for "${task.title}" has been placed. Transaction hash: ${txHash}.`;
+          return `Payment successful! The order for "${product.title}" has been placed. Transaction hash: ${txHash}.`;
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message.split("\n")[0] : "Unknown error";
           return `Payment failed: ${message}. The user may have rejected the transaction or there was a network issue.`;
@@ -115,10 +140,16 @@ export function useSobekVoice() {
             return "The user's wallet is not connected. Please ask them to connect their wallet first.";
           }
 
-          const inToken = SUPPORTED_TOKENS[tokenIn.toUpperCase()];
-          const outToken = SUPPORTED_TOKENS[tokenOut.toUpperCase()];
+          const chainId = account.chainId;
+          const chainTokens = chainId ? TOKENS_BY_CHAIN[chainId] : undefined;
+          if (!chainTokens || Object.keys(chainTokens).length <= 1) {
+            return "Swaps are not supported on the current network. Please switch to Base.";
+          }
+
+          const inToken = chainTokens[tokenIn.toUpperCase()];
+          const outToken = chainTokens[tokenOut.toUpperCase()];
           if (!inToken || !outToken) {
-            return `Unsupported token. Supported tokens: ${Object.keys(SUPPORTED_TOKENS).join(", ")}`;
+            return `Unsupported token on this network. Supported tokens: ${Object.keys(chainTokens).join(", ")}`;
           }
           if (inToken.symbol === outToken.symbol) {
             return "Cannot swap a token for itself.";
@@ -132,8 +163,8 @@ export function useSobekVoice() {
             body: JSON.stringify({
               tokenIn: inToken.address,
               tokenOut: outToken.address,
-              tokenInChainId: 8453,
-              tokenOutChainId: 8453,
+              tokenInChainId: chainId,
+              tokenOutChainId: chainId,
               amount: amountRaw,
               swapper: account.address,
               type: "EXACT_INPUT",
@@ -153,7 +184,7 @@ export function useSobekVoice() {
                 token: inToken.address,
                 amount: amountRaw,
                 walletAddress: account.address,
-                chainId: 8453,
+                chainId,
               }),
             });
             const approvalData = await approvalRes.json();
@@ -216,12 +247,6 @@ export function useSobekVoice() {
     },
   });
 
-  // Clean up session on unmount
-  useEffect(() => {
-    return () => {
-      conversation.endSession();
-    };
-  }, [conversation]);
 
   const start = useCallback(async () => {
     if (conversation.status !== "disconnected") return;

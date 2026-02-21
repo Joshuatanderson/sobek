@@ -12,7 +12,7 @@ const spaceMono = Space_Mono({ variable: "--font-space-mono", subsets: ["latin"]
 
 export const metadata: Metadata = {
   title: "Sobek",
-  description: "Voice-powered task marketplace on USDC",
+  description: "Voice-powered product marketplace on USDC",
   icons: {
     icon: "/sobek-small.png",
   },

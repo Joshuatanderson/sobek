@@ -1,6 +1,6 @@
 {
     "name": "initiate_payment",
-    "description": "Initiates a blockchain payment for a task. Call this when the user wants to order, buy, or pay for a task. The user must have a connected wallet. This triggers a wallet transaction popup on the user's device.",
+    "description": "Initiates a blockchain payment for a product. Call this when the user wants to order, buy, or pay for a product. The user must have a connected wallet. This triggers a wallet transaction popup on the user's device.",
     "type": "client",
     "expects_response": true,
     "response_timeout_secs": 120,
@@ -8,12 +8,12 @@
     "force_pre_tool_speech": true,
     "parameters": {
         "type": "object",
-        "required": ["task_id", "payment_method"],
+        "required": ["product_id", "payment_method"],
         "description": "Parameters for initiating a payment",
         "properties": {
-            "task_id": {
+            "product_id": {
                 "type": "string",
-                "description": "The unique ID of the task to pay for"
+                "description": "The unique ID of the product to pay for"
             },
             "payment_method": {
                 "type": "string",

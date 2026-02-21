@@ -3,21 +3,22 @@
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseUnits } from "viem";
 import { erc20Abi } from "viem";
-import { BASE_USDC_ADDRESS } from "@/config/constants";
-import { createOrder } from "@/app/task/actions";
+import { USDC_BY_CHAIN } from "@/config/constants";
+import { createOrder } from "@/app/product/actions";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
-export function BuyTaskButton({
-  taskId,
+export function BuyProductButton({
+  productId,
   priceUsdc,
   recipientAddress,
 }: {
-  taskId: string;
+  productId: string;
   priceUsdc: number;
   recipientAddress: `0x${string}`;
 }) {
-  const { isConnected, address } = useAccount();
+  const { isConnected, address, chainId } = useAccount();
+  const usdcAddress = chainId ? USDC_BY_CHAIN[chainId] : undefined;
   const [status, setStatus] = useState<"idle" | "confirming" | "submitting" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -45,7 +46,7 @@ export function BuyTaskButton({
   useEffect(() => {
     if (isTxConfirmed && txHash) {
       setStatus("submitting");
-      createOrder(taskId, txHash, address!)
+      createOrder(productId, txHash, address!)
         .then((result) => {
           if (result.error) {
             setStatus("error");
@@ -63,13 +64,14 @@ export function BuyTaskButton({
       setStatus("error");
       setErrorMsg("Transaction failed on-chain");
     }
-  }, [isTxConfirmed, isTxError, txHash, taskId]);
+  }, [isTxConfirmed, isTxError, txHash, productId]);
 
   function handleBuy() {
+    if (!usdcAddress) return;
     setStatus("confirming");
     setErrorMsg("");
     writeContract({
-      address: BASE_USDC_ADDRESS,
+      address: usdcAddress,
       abi: erc20Abi,
       functionName: "transfer",
       args: [recipientAddress, parseUnits(priceUsdc.toString(), 6)],
@@ -79,6 +81,12 @@ export function BuyTaskButton({
   if (!isConnected) {
     return (
       <span className="text-sobek-green-light/60 text-sm">Connect wallet</span>
+    );
+  }
+
+  if (!usdcAddress) {
+    return (
+      <span className="text-sobek-green-light/60 text-sm">USDC not available on this network</span>
     );
   }
 

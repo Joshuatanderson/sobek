@@ -2,7 +2,7 @@
     "tools": [
         {
             "type": "client",
-            "config": "tool_configs/get_tasks.json",
+            "config": "tool_configs/get_products.json",
             "id": "tool_7001khwk0ms2ebprhzfytvjpmwbf"
         },
         {

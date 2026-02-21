@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { SobekWidget } from "@/components/sobek-widget";
+
 import {
   MagnifyingGlass,
   User,
@@ -724,7 +724,6 @@ export default function EcommerceHome() {
         </footer>
       </div>
 
-      <SobekWidget />
     </>
   );
 }

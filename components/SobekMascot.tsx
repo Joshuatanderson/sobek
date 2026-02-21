@@ -8,8 +8,8 @@ export function SobekMascot({ className = "" }: { className?: string }) {
       <Image
         src="/sobek.png"
         alt="Sobek mascot"
-        width={200}
-        height={200}
+        width={140}
+        height={140}
         priority
       />
 

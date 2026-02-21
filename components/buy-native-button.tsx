@@ -2,17 +2,17 @@
 
 import { useAccount, useChains, useSendTransaction, useWaitForTransactionReceipt } from "wagmi";
 import { parseEther } from "viem";
-import { createOrder } from "@/app/task/actions";
+import { createOrder } from "@/app/product/actions";
 import { ETH_USD_PRICE } from "@/config/constants";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 export function BuyNativeButton({
-  taskId,
+  productId,
   price,
   recipientAddress,
 }: {
-  taskId: string;
+  productId: string;
   price: number;
   recipientAddress: `0x${string}`;
 }) {
@@ -43,7 +43,7 @@ export function BuyNativeButton({
   useEffect(() => {
     if (isTxConfirmed && txHash) {
       setStatus("submitting");
-      createOrder(taskId, txHash, address!, nativeCurrency.symbol)
+      createOrder(productId, txHash, address!, nativeCurrency.symbol)
         .then((result) => {
           if (result.error) {
             setStatus("error");
@@ -61,7 +61,7 @@ export function BuyNativeButton({
       setStatus("error");
       setErrorMsg("Transaction failed on-chain");
     }
-  }, [isTxConfirmed, isTxError, txHash, taskId, nativeCurrency.symbol]);
+  }, [isTxConfirmed, isTxError, txHash, productId, nativeCurrency.symbol]);
 
   function handleBuy() {
     setStatus("confirming");

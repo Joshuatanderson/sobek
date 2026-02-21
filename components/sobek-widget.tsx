@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useSobekVoice } from "@/hooks/useSobekVoice";
@@ -9,7 +10,8 @@ import { useWalletAuth } from "@/hooks/useWalletAuth";
 export function SobekWidget() {
   const [open, setOpen] = useState(false);
   const transcriptRef = useRef<HTMLDivElement>(null);
-  const voice = useSobekVoice();
+  const router = useRouter();
+  const voice = useSobekVoice({ onNavigate: (path) => router.push(path) });
   useWalletAuth();
 
   useEffect(() => {
@@ -93,13 +95,13 @@ export function SobekWidget() {
           <div className="flex items-center justify-center gap-2 px-4 pb-3">
             <button
               onClick={voice.end}
-              className="rounded-full bg-red-600 hover:bg-red-700 px-4 py-1.5 text-xs font-medium text-white transition-colors"
+              className="flex-1 rounded-full bg-red-600 hover:bg-red-700 py-2 text-sm font-semibold text-white transition-colors"
             >
-              End
+              End Call
             </button>
             <button
               onClick={voice.toggleMute}
-              className="rounded-full border border-sobek-forest/40 px-4 py-1.5 text-xs font-medium text-sobek-green-light/80 hover:border-sobek-green-light/40 transition-colors"
+              className="rounded-full border border-sobek-forest/40 px-4 py-2 text-sm font-medium text-sobek-green-light/80 hover:border-sobek-green-light/40 transition-colors"
             >
               {voice.muted ? "Unmute" : "Mute"}
             </button>
