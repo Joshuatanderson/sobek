@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     resolution: "refund" | "release";
   };
 
-  // Fetch transaction + related product/user data
+  // Fetch transaction
   const { data: transaction, error: txError } = await supabaseAdmin
     .from("transactions")
     .select("id, escrow_status, escrow_registration, product_id, client_id, chain_id")
@@ -43,16 +43,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
   }
 
-  // Atomically claim — only resolve if still "disputed"
-  const { data: claimed, error: claimError } = await supabaseAdmin
-    .from("transactions")
-    .update({ escrow_status: resolution === "refund" ? "refunding" : "releasing" })
-    .eq("id", transactionId)
-    .eq("escrow_status", "disputed")
-    .select("id")
-    .single();
-
-  if (claimError || !claimed) {
+  if (transaction.escrow_status !== "disputed") {
     return NextResponse.json(
       { error: "Transaction is not in disputed state (may already be resolved)" },
       { status: 409 }
@@ -103,102 +94,98 @@ export async function POST(request: Request) {
     beforeMrate = await getSellerMrate(supabaseAdmin, sellerWallet);
   }
 
+  // Execute on-chain first — if this fails, nothing changes in DB
+  let txHash: string;
   try {
-    // Execute on-chain
-    const txHash =
+    txHash =
       resolution === "refund"
         ? await refundEscrow(transaction.escrow_registration, transaction.chain_id)
         : await releaseEscrow(transaction.escrow_registration, transaction.chain_id);
-
-    const resolvedTo = resolution === "refund" ? buyerWallet : sellerWallet;
-
-    // Update DB
-    const { error: updateError } = await supabaseAdmin
-      .from("transactions")
-      .update({
-        escrow_status: resolution === "refund" ? "refunded" : "released",
-        tx_hash: txHash,
-        escrow_resolved_to: resolvedTo,
-        escrow_resolved_at: new Date().toISOString(),
-      })
-      .eq("id", transactionId);
-
-    if (updateError) {
-      console.error(
-        `CRITICAL: On-chain ${resolution} succeeded for transaction ${transactionId} (tx: ${txHash}) but DB update failed:`,
-        updateError
-      );
-      return NextResponse.json(
-        { error: "On-chain succeeded but DB update failed — needs manual intervention", txHash },
-        { status: 500 }
-      );
-    }
-
-    // Reputation event
-    if (product?.price_usdc) {
-      if (resolution === "refund" && sellerWallet) {
-        // Buyer won dispute → seller loses rep
-        const delta = calculateDisputeLossSeller(product.price_usdc);
-        await supabaseAdmin.from("reputation_events").insert({
-          wallet: sellerWallet,
-          delta,
-          reason: "dispute_refund",
-          transaction_id: transactionId,
-          amount_usd: product.price_usdc,
-        });
-      } else if (resolution === "release" && buyerWallet) {
-        // Seller won dispute → buyer loses rep
-        const delta = calculateDisputeLossBuyer(product.price_usdc);
-        await supabaseAdmin.from("reputation_events").insert({
-          wallet: buyerWallet,
-          delta,
-          reason: "dispute_release",
-          transaction_id: transactionId,
-          amount_usd: product.price_usdc,
-        });
-      }
-    }
-
-    // HCS tier transition logging (seller only — they have the Mrate)
-    if (sellerWallet && beforeMrate) {
-      const after = await getSellerMrate(supabaseAdmin, sellerWallet);
-      if (beforeMrate.tier !== after.tier) {
-        const { data: updatedUser } = await supabaseAdmin
-          .from("users")
-          .select("reputation_sum")
-          .eq("wallet_address", sellerWallet)
-          .single();
-
-        await logTierTransition({
-          wallet: sellerWallet,
-          previousTier: beforeMrate.tier,
-          newTier: after.tier,
-          reputationScore: updatedUser?.reputation_sum ?? 0,
-          transactionId,
-          timestamp: new Date().toISOString(),
-        });
-      }
-    }
-
-    // Notify both parties
-    const resolutionLabel = resolution === "refund" ? "refunded to buyer" : "released to seller";
-    const message = `Dispute resolved: transaction ${transactionId.slice(0, 8)}… has been ${resolutionLabel}.`;
-
-    if (sellerId) notifyUser(sellerId, message).catch(() => {});
-    if (buyerId) notifyUser(buyerId, message).catch(() => {});
-
-    return NextResponse.json({ status: resolution === "refund" ? "refunded" : "released", txHash });
   } catch (err) {
-    // On-chain failed — revert the claim
-    await supabaseAdmin
-      .from("transactions")
-      .update({ escrow_status: "disputed" })
-      .eq("id", transactionId)
-      .eq("escrow_status", resolution === "refund" ? "refunding" : "releasing");
-
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
+      { error: err instanceof Error ? err.message : "On-chain call failed" },
       { status: 500 }
     );
   }
+
+  const finalStatus = resolution === "refund" ? "refunded" : "released";
+  const resolvedTo = resolution === "refund" ? buyerWallet : sellerWallet;
+
+  // Atomically update DB — optimistic lock on "disputed" prevents double-resolve
+  const { data: updated, error: updateError } = await supabaseAdmin
+    .from("transactions")
+    .update({
+      escrow_status: finalStatus,
+      tx_hash: txHash,
+      escrow_resolved_to: resolvedTo,
+      escrow_resolved_at: new Date().toISOString(),
+    })
+    .eq("id", transactionId)
+    .eq("escrow_status", "disputed")
+    .select("id")
+    .single();
+
+  if (updateError || !updated) {
+    console.error(
+      `CRITICAL: On-chain ${resolution} succeeded for transaction ${transactionId} (tx: ${txHash}) but DB update failed:`,
+      updateError
+    );
+    return NextResponse.json(
+      { error: "On-chain succeeded but DB update failed — needs manual intervention", txHash },
+      { status: 500 }
+    );
+  }
+
+  // Reputation event
+  if (product?.price_usdc) {
+    if (resolution === "refund" && sellerWallet) {
+      const delta = calculateDisputeLossSeller(product.price_usdc);
+      await supabaseAdmin.from("reputation_events").insert({
+        wallet: sellerWallet,
+        delta,
+        reason: "dispute_refund",
+        transaction_id: transactionId,
+        amount_usd: product.price_usdc,
+      });
+    } else if (resolution === "release" && buyerWallet) {
+      const delta = calculateDisputeLossBuyer(product.price_usdc);
+      await supabaseAdmin.from("reputation_events").insert({
+        wallet: buyerWallet,
+        delta,
+        reason: "dispute_release",
+        transaction_id: transactionId,
+        amount_usd: product.price_usdc,
+      });
+    }
+  }
+
+  // HCS tier transition logging
+  if (sellerWallet && beforeMrate) {
+    const after = await getSellerMrate(supabaseAdmin, sellerWallet);
+    if (beforeMrate.tier !== after.tier) {
+      const { data: updatedUser } = await supabaseAdmin
+        .from("users")
+        .select("reputation_sum")
+        .eq("wallet_address", sellerWallet)
+        .single();
+
+      await logTierTransition({
+        wallet: sellerWallet,
+        previousTier: beforeMrate.tier,
+        newTier: after.tier,
+        reputationScore: updatedUser?.reputation_sum ?? 0,
+        transactionId,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+
+  // Notify both parties
+  const resolutionLabel = resolution === "refund" ? "refunded to buyer" : "released to seller";
+  const message = `Dispute resolved: transaction ${transactionId.slice(0, 8)}… has been ${resolutionLabel}.`;
+
+  if (sellerId) notifyUser(sellerId, message).catch(() => {});
+  if (buyerId) notifyUser(buyerId, message).catch(() => {});
+
+  return NextResponse.json({ status: finalStatus, txHash });
 }

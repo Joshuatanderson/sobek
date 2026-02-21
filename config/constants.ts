@@ -13,7 +13,7 @@ export const adiTestnet = {
 /** Deployed SobekEscrow contract addresses per chain (public, not secrets) */
 export const ESCROW_BY_CHAIN: Record<number, `0x${string}`> = {
   [base.id]: "0x840078504D8925d7033bcC64aae5bfDD87Fc299B",
-  [baseSepolia.id]: "0x8F1D7b515d8cA3Ce894E2CCFC9ee74B3ff8cA584",
+  [baseSepolia.id]: "0xEEE01BCDF7C3e80439C1d3B43C486F93eDe85900",
   [adiTestnet.id]: "0x0233CdB1d6fCED7Dfdd30A0bE3476317a6E02A6e",
 };
 

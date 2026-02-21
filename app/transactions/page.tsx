@@ -45,6 +45,7 @@ function statusBadge(escrowStatus: string | null) {
     active: "bg-amber-900/40 text-amber-400 border-amber-700/50",
     pending_schedule: "bg-yellow-900/40 text-yellow-400 border-yellow-700/50",
     releasing: "bg-blue-900/40 text-blue-400 border-blue-700/50",
+    resolving: "bg-blue-900/40 text-blue-400 border-blue-700/50",
     disputed: "bg-red-900/40 text-red-400 border-red-700/50",
     refunded: "bg-red-900/40 text-red-400 border-red-700/50",
     released: "bg-green-900/40 text-green-400 border-green-700/50",
