@@ -1,7 +1,10 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { base, baseSepolia } from "wagmi/chains";
 import { http, cookieStorage, createStorage } from "wagmi";
-import { adiTestnet } from "./constants";
+import { Attribution } from "ox/erc8021";
+import { adiTestnet, BUILDER_CODE } from "./constants";
+
+const DATA_SUFFIX = Attribution.toDataSuffix({ codes: [BUILDER_CODE] });
 
 export const wagmiConfig = getDefaultConfig({
   appName: "Sobek",
@@ -14,4 +17,5 @@ export const wagmiConfig = getDefaultConfig({
   },
   ssr: true,
   storage: createStorage({ storage: cookieStorage }),
+  dataSuffix: DATA_SUFFIX,
 });

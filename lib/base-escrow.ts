@@ -8,7 +8,10 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
-import { ESCROW_BY_CHAIN, adiTestnet } from "@/config/constants";
+import { Attribution } from "ox/erc8021";
+import { ESCROW_BY_CHAIN, BUILDER_CODE, adiTestnet } from "@/config/constants";
+
+const DATA_SUFFIX = Attribution.toDataSuffix({ codes: [BUILDER_CODE] });
 
 const ESCROW_ABI = parseAbi([
   "function releaseToReceiver(uint256 registration) public payable",
@@ -47,6 +50,7 @@ export async function releaseEscrow(
     account,
     chain,
     transport,
+    dataSuffix: DATA_SUFFIX,
   });
 
   const publicClient = createPublicClient({
@@ -94,6 +98,7 @@ export async function refundEscrow(
     account,
     chain,
     transport,
+    dataSuffix: DATA_SUFFIX,
   });
 
   const publicClient = createPublicClient({
