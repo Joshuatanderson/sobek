@@ -18,6 +18,9 @@ export function Header() {
           <Link href="/transactions" className="text-sm text-sobek-green-light/80 hover:text-sobek-gold transition-colors">
             Transactions
           </Link>
+          <Link href="/users" className="text-sm text-sobek-green-light/80 hover:text-sobek-gold transition-colors">
+            Users
+          </Link>
         </nav>
         <LinkTelegram />
         <div className="min-h-[40px] min-w-[148px] flex items-center justify-end">
