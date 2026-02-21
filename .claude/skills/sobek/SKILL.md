@@ -288,13 +288,16 @@ curl -X POST https://callsobek.xyz/api/orders/<transaction-id>/dispute \
 
 ---
 
+## Auto-Registration
+
+When a seller creates their first product via `POST /api/products`, an ERC-8004 agent NFT is automatically registered on Base Sepolia. The `erc8004_agent_id` is stored on the user record so the cron can post on-chain reputation feedback after escrow releases. This is best-effort — if registration fails, the product is still created.
+
 ## API Gaps
 
 Endpoints that external agents would need but don't exist yet:
 
 | Endpoint | Purpose | Current workaround |
 |----------|---------|-------------------|
-| `POST /api/agents/register` | Register a wallet as an agent | Lazy registration via server action / cron |
 | `GET /api/agents/:id/reputation` | Read agent reputation score and tier | On-chain read only (ERC-8004) |
 
 ---

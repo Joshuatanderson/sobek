@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/utils/supabase/admin";
+import { registerAgent } from "@/lib/erc8004-register";
 
 export const dynamic = "force-dynamic";
 
@@ -56,11 +57,24 @@ export async function POST(request: Request) {
   const { data: user, error: userError } = await supabaseAdmin
     .from("users")
     .upsert({ wallet_address }, { onConflict: "wallet_address" })
-    .select("id")
+    .select("id, erc8004_agent_id")
     .single();
 
   if (userError || !user) {
     return NextResponse.json({ error: "Failed to resolve wallet" }, { status: 500 });
+  }
+
+  // Auto-register ERC-8004 agent if seller doesn't have one yet (best-effort)
+  if (user.erc8004_agent_id == null) {
+    try {
+      const agentId = await registerAgent(wallet_address);
+      await supabaseAdmin
+        .from("users")
+        .update({ erc8004_agent_id: agentId })
+        .eq("id", user.id);
+    } catch (err) {
+      console.error("Non-fatal: ERC-8004 agent registration failed:", err);
+    }
   }
 
   const { data: product, error: productError } = await supabaseAdmin

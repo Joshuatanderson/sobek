@@ -26,6 +26,10 @@ vi.mock("@/lib/hedera-dispute", () => ({
   cancelEscrowSchedule: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("@/lib/erc8004-register", () => ({
+  registerAgent: vi.fn().mockResolvedValue(42),
+}));
+
 // --- Imports (after mocks) ---
 import { GET as getProducts, POST as postProduct } from "@/app/api/products/route";
 import { POST as postOrder } from "@/app/api/orders/route";
@@ -157,11 +161,31 @@ describe("POST /api/products", () => {
   });
 
   it("creates product on valid input", async () => {
-    const user = { id: "user-1" };
+    const user = { id: "user-1", erc8004_agent_id: 42 };
     const product = { id: "prod-1", title: "Test" };
     // Two calls: upsert user, then insert product
     mockFrom
       .mockReturnValueOnce(mockChain({ data: user, error: null }))
+      .mockReturnValueOnce(mockChain({ data: product, error: null }));
+
+    const res = await postProduct(
+      jsonRequest({
+        title: "Test", description: "Desc", price_usdc: 5,
+        wallet_address: "0x" + "a".repeat(40),
+      })
+    );
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.product).toEqual(product);
+  });
+
+  it("auto-registers ERC-8004 agent for new seller", async () => {
+    const user = { id: "user-1", erc8004_agent_id: null };
+    const product = { id: "prod-1", title: "Test" };
+    // Three calls: upsert user, update erc8004_agent_id, insert product
+    mockFrom
+      .mockReturnValueOnce(mockChain({ data: user, error: null }))
+      .mockReturnValueOnce(mockChain({ data: null, error: null }))
       .mockReturnValueOnce(mockChain({ data: product, error: null }));
 
     const res = await postProduct(
