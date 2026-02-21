@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DisputeActions } from "./dispute-actions";
+import { DisputeButton } from "./dispute-button";
 
 type TransactionRow = {
   id: string;
@@ -168,6 +169,12 @@ async function TransactionsTable() {
                 <TableCell>
                   {transaction.escrow_status === "disputed" && (
                     <DisputeActions transactionId={transaction.id} />
+                  )}
+                  {transaction.escrow_status === "active" && buyer?.wallet_address && (
+                    <DisputeButton
+                      transactionId={transaction.id}
+                      buyerWallet={buyer.wallet_address}
+                    />
                   )}
                 </TableCell>
               </TableRow>
