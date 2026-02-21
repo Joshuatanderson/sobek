@@ -96,7 +96,7 @@ async function UsersTable() {
                   )}
                 </TableCell>
                 <TableCell className="text-right text-sobek-green-light/70">
-                  {user.reputation_sum != null ? user.reputation_sum : "—"}
+                  {user.reputation_score != null ? user.reputation_score : "—"}
                 </TableCell>
               </TableRow>
             );
