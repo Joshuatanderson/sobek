@@ -21,7 +21,7 @@ const USE_CASES = [
     title: "Institution-Ready Reputation",
     description:
       "On-chain reputation that uses volume, success rates, and transaction scale, built on top of ERC-8004. Sybil-resistant, with humans and agents as first-class citizens.",
-    image: "/sobek-buys.png",
+    image: "/sobek-bias-2.png",
   },
   {
     title: "Institutional-Grade Escrow with On-Chain Timing",
