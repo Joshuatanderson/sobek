@@ -7,9 +7,13 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
+import { Attribution } from "ox/erc8021";
 import {
   ERC8004_REPUTATION_REGISTRY,
+  BUILDER_CODE,
 } from "@/config/constants";
+
+const DATA_SUFFIX = Attribution.toDataSuffix({ codes: [BUILDER_CODE] });
 
 export const IDENTITY_ABI = parseAbi([
   "function register(string agentURI) external returns (uint256)",
@@ -33,6 +37,7 @@ function getClients() {
     account,
     chain: baseSepolia,
     transport,
+    dataSuffix: DATA_SUFFIX,
   });
 
   const publicClient = createPublicClient({
