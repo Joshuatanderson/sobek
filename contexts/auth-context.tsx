@@ -59,44 +59,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) await fetchProfile(user.id);
   }, [user, fetchProfile]);
 
-  // Sign out on disconnect
+  // Sign in on connect / address switch — matches old useWalletAuth pattern
   useEffect(() => {
-    if (!isConnected) {
-      prevAddress.current = undefined;
-      supabase.auth.signOut();
-    }
-  }, [isConnected]);
-
-  // Sign in on connect / switch
-  useEffect(() => {
+    console.log("[AUTH] effect fired:", { isConnected, address: address?.slice(0, 10), prev: prevAddress.current?.slice(0, 10) });
     if (!isConnected || !address || address === prevAddress.current) return;
-
-    const wasConnected = prevAddress.current !== undefined;
     prevAddress.current = address;
 
     (async () => {
-      if (wasConnected) {
-        await supabase.auth.signOut();
+      try {
+        // Skip sign-in if we already have a valid session
+        const { data: sessionData } = await supabase.auth.getSession();
+        console.log("[AUTH] existing session?", !!sessionData.session, sessionData.session?.user?.id?.slice(0, 8));
+        if (sessionData.session) {
+          // Already signed in — just touch last_seen_at
+          await supabase.from("users")
+            .update({ last_seen_at: new Date().toISOString() })
+            .eq("id", sessionData.session.user.id);
+          return;
+        }
+
+        console.log("[AUTH] no session, calling signInWithWeb3...");
+        const { data, error } = await supabase.auth.signInWithWeb3({
+          chain: "ethereum",
+          statement: "Sign in to Sobek",
+        });
+
+        if (error) {
+          console.error("[AUTH] signInWithWeb3 failed:", error.message);
+          return;
+        }
+        console.log("[AUTH] signInWithWeb3 success, user:", data.user.id.slice(0, 8));
+
+        const { error: upsertErr } = await supabase.from("users").upsert(
+          {
+            id: data.user.id,
+            wallet_address: address,
+            last_seen_at: new Date().toISOString(),
+          },
+          { onConflict: "wallet_address" }
+        );
+        if (upsertErr) console.error("[AUTH] upsert failed:", upsertErr.code, upsertErr.message);
+      } catch (err) {
+        console.error("[AUTH] flow error:", err);
       }
-
-      const { data, error } = await supabase.auth.signInWithWeb3({
-        chain: "ethereum",
-        statement: "Sign in to Sobek",
-      });
-
-      if (error) {
-        console.error("Web3 sign-in failed:", error.message);
-        return;
-      }
-
-      await supabase.from("users").upsert(
-        {
-          id: data.user.id,
-          wallet_address: address,
-          last_seen_at: new Date().toISOString(),
-        },
-        { onConflict: "id" }
-      );
     })();
   }, [address, isConnected]);
 

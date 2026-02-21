@@ -43,17 +43,49 @@ export function useSobekVoice({ onNavigate }: SobekVoiceOptions = {}) {
   const onNavigateRef = useRef(onNavigate);
   onNavigateRef.current = onNavigate;
 
+  const TAG = "[sobek-voice]";
+
   const conversation = useConversation({
     micMuted: muted,
+    onConnect: ({ conversationId }) => {
+      console.log(`${TAG} CONNECTED — conversationId=${conversationId}`);
+    },
+    onDisconnect: (details) => {
+      console.warn(
+        `${TAG} DISCONNECTED — reason=${details.reason}`,
+        "closeCode" in details ? `code=${details.closeCode}` : "",
+        "closeReason" in details ? `closeReason="${details.closeReason}"` : "",
+        "message" in details ? `message="${details.message}"` : "",
+        details,
+      );
+    },
+    onStatusChange: ({ status }) => {
+      console.log(`${TAG} status → ${status}`);
+    },
+    onModeChange: ({ mode }) => {
+      console.log(`${TAG} mode → ${mode}`);
+    },
+    onInterruption: (props) => {
+      console.log(`${TAG} INTERRUPTION`, props);
+    },
+    onDebug: (props) => {
+      console.debug(`${TAG} debug`, props);
+    },
     clientTools: {
       navigate_to_page: async ({ query }: { query: string }) => {
+        console.log(`${TAG} tool:navigate_to_page query="${query}"`);
         const q = query.toLowerCase();
         const match = PAGES.find((p) => p.keywords.some((k) => q.includes(k)));
-        if (!match) return "No matching page found. Do not mention this to the user.";
+        if (!match) {
+          console.log(`${TAG} tool:navigate_to_page — no match`);
+          return "No matching page found. Do not mention this to the user.";
+        }
+        console.log(`${TAG} tool:navigate_to_page — navigating to ${match.path}`);
         onNavigateRef.current?.(match.path);
         return "Done. Do not mention this navigation to the user.";
       },
       get_products: async () => {
+        console.log(`${TAG} tool:get_products`);
         try {
           const supabase = createClient();
           const { data, error } = await supabase
@@ -75,6 +107,7 @@ export function useSobekVoice({ onNavigate }: SobekVoiceOptions = {}) {
         }
       },
       initiate_payment: async ({ product_id, payment_method }: { product_id: string; payment_method: "usdc" | "native" }) => {
+        console.log(`${TAG} tool:initiate_payment product=${product_id} method=${payment_method}`);
         try {
           const account = getAccount(wagmiConfig);
           if (!account.isConnected || !account.address) {
@@ -180,6 +213,7 @@ export function useSobekVoice({ onNavigate }: SobekVoiceOptions = {}) {
         }
       },
       initiate_swap: async ({ tokenIn, tokenOut, amount }: { tokenIn: string; tokenOut: string; amount: string }) => {
+        console.log(`${TAG} tool:initiate_swap ${amount} ${tokenIn} → ${tokenOut}`);
         try {
           const account = getAccount(wagmiConfig);
           if (!account.isConnected || !account.address) {
@@ -286,28 +320,38 @@ export function useSobekVoice({ onNavigate }: SobekVoiceOptions = {}) {
       },
     },
     onMessage: ({ message, role }) => {
+      console.log(`${TAG} message [${role}]: ${message.slice(0, 120)}${message.length > 120 ? "…" : ""}`);
       setMessages((prev) => [...prev, { role, text: message }]);
     },
-    onError: (message) => {
-      console.error("Error:", message);
+    onError: (message, context) => {
+      console.error(`${TAG} ERROR: ${message}`, context);
     },
   });
 
 
   const start = useCallback(async () => {
-    if (conversation.status !== "disconnected") return;
+    console.log(`${TAG} start() called — current status=${conversation.status}`);
+    if (conversation.status !== "disconnected") {
+      console.log(`${TAG} start() skipped — not disconnected`);
+      return;
+    }
     try {
+      console.log(`${TAG} requesting mic access…`);
       await navigator.mediaDevices.getUserMedia({ audio: true });
-      await conversation.startSession({ agentId: AGENT_ID } as Parameters<
+      console.log(`${TAG} mic granted — starting session agentId=${AGENT_ID}`);
+      const sessionId = await conversation.startSession({ agentId: AGENT_ID } as Parameters<
         typeof conversation.startSession
       >[0]);
+      console.log(`${TAG} session started — sessionId=${sessionId}`);
     } catch (err) {
-      console.error("Failed to start:", err);
+      console.error(`${TAG} start() FAILED:`, err);
     }
   }, [conversation]);
 
   const end = useCallback(async () => {
+    console.log(`${TAG} end() called — current status=${conversation.status}`);
     await conversation.endSession();
+    console.log(`${TAG} end() complete`);
   }, [conversation]);
 
   const toggleMute = useCallback(() => {
