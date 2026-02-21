@@ -14,44 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      reputation_events: {
-        Row: {
-          id: number
-          wallet: string
-          delta: number
-          reason: string
-          order_id: string | null
-          amount_usd: number | null
-          created_at: string
-        }
-        Insert: {
-          id?: number
-          wallet: string
-          delta: number
-          reason: string
-          order_id?: string | null
-          amount_usd?: number | null
-          created_at?: string
-        }
-        Update: {
-          id?: number
-          wallet?: string
-          delta?: number
-          reason?: string
-          order_id?: string | null
-          amount_usd?: number | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "reputation_events_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       orders: {
         Row: {
           charge_id: string | null
@@ -60,13 +22,14 @@ export type Database = {
           custom_instructions: string | null
           dispute_initiated_at: string | null
           dispute_initiated_by: string | null
-          escrow_status: string
+          escrow_registration: number | null
+          escrow_status: string | null
           hedera_schedule_id: string | null
           id: string
           paid_at: string | null
+          product_id: string | null
           release_at: string | null
           status: string
-          task_id: string | null
           tx_hash: string | null
         }
         Insert: {
@@ -76,13 +39,14 @@ export type Database = {
           custom_instructions?: string | null
           dispute_initiated_at?: string | null
           dispute_initiated_by?: string | null
-          escrow_status?: string
+          escrow_registration?: number | null
+          escrow_status?: string | null
           hedera_schedule_id?: string | null
           id?: string
           paid_at?: string | null
+          product_id?: string | null
           release_at?: string | null
           status?: string
-          task_id?: string | null
           tx_hash?: string | null
         }
         Update: {
@@ -92,13 +56,14 @@ export type Database = {
           custom_instructions?: string | null
           dispute_initiated_at?: string | null
           dispute_initiated_by?: string | null
-          escrow_status?: string
+          escrow_registration?: number | null
+          escrow_status?: string | null
           hedera_schedule_id?: string | null
           id?: string
           paid_at?: string | null
+          product_id?: string | null
           release_at?: string | null
           status?: string
-          task_id?: string | null
           tx_hash?: string | null
         }
         Relationships: [
@@ -110,19 +75,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "orders_task_id_fkey"
-            columns: ["task_id"]
+            foreignKeyName: "orders_product_id_fkey"
+            columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "tasks"
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
       }
-      tasks: {
+      products: {
         Row: {
           agent_id: string | null
           created_at: string | null
           description: string
+          escrow_duration_hours: number | null
           id: string
           price_usdc: number
           status: string
@@ -132,6 +98,7 @@ export type Database = {
           agent_id?: string | null
           created_at?: string | null
           description: string
+          escrow_duration_hours?: number | null
           id?: string
           price_usdc: number
           status?: string
@@ -141,6 +108,7 @@ export type Database = {
           agent_id?: string | null
           created_at?: string | null
           description?: string
+          escrow_duration_hours?: number | null
           id?: string
           price_usdc?: number
           status?: string
@@ -148,10 +116,48 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "tasks_agent_id_fkey"
+            foreignKeyName: "products_agent_id_fkey"
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reputation_events: {
+        Row: {
+          amount_usd: number | null
+          created_at: string | null
+          delta: number
+          id: number
+          order_id: string | null
+          reason: string
+          wallet: string
+        }
+        Insert: {
+          amount_usd?: number | null
+          created_at?: string | null
+          delta: number
+          id?: number
+          order_id?: string | null
+          reason: string
+          wallet: string
+        }
+        Update: {
+          amount_usd?: number | null
+          created_at?: string | null
+          delta?: number
+          id?: number
+          order_id?: string | null
+          reason?: string
+          wallet?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reputation_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -162,7 +168,7 @@ export type Database = {
           display_name: string | null
           id: string
           last_seen_at: string | null
-          reputation_sum: number
+          reputation_sum: number | null
           telegram_chat_id: number | null
           telegram_handle: string | null
           telegram_link_token: string | null
@@ -173,7 +179,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           last_seen_at?: string | null
-          reputation_sum?: number
+          reputation_sum?: number | null
           telegram_chat_id?: number | null
           telegram_handle?: string | null
           telegram_link_token?: string | null
@@ -184,7 +190,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           last_seen_at?: string | null
-          reputation_sum?: number
+          reputation_sum?: number | null
           telegram_chat_id?: number | null
           telegram_handle?: string | null
           telegram_link_token?: string | null
