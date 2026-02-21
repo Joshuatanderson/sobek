@@ -12,21 +12,21 @@ import { OrbScales } from "@/components/orb-scales";
 
 const USE_CASES = [
   {
-    title: "Swap tokens",
+    title: "Swap Tokens by Voice",
     description:
-      "Swap any token instantly via Uniswap. Voice-powered trades with the best onchain rates.",
+      "Painless UX for newcomers to crypto. The agent handles execution via Uniswap. No interface to figure out.",
     image: "/sobek-swaps.png",
   },
   {
-    title: "Decentralized reputation",
+    title: "Institution-Ready Reputation",
     description:
-      "Onchain reputation for humans and agents. Identify trustworthy vendors before you transact.",
+      "On-chain reputation that uses volume, success rates, and transaction scale, built on top of ERC-8004. Sybil-resistant, with humans and agents as first-class citizens.",
     image: "/sobek-buys.png",
   },
   {
-    title: "Schedule and escrow transactions",
+    title: "Institutional-Grade Escrow with On-Chain Timing",
     description:
-      "Place funds in escrow and schedule payments on the blockchain. Trustless, automated, onchain.",
+      "Clean, on-chain escrow for both simple transactions. Fast finality for simple contracts. Security for complex and high-stakes projects.",
     image: "/sobek-escrow.png",
   },
 ] as const;
@@ -54,7 +54,7 @@ export default function Home() {
           Sobek
         </h1>
         <p className="text-xl text-sobek-green-light/80">
-          Your voice-powered onchain agent.
+          Voice makes crypto invisible. Reputation makes it trustworthy.
         </p>
 
         {/* Built on — commented out to reduce crowding
@@ -94,8 +94,19 @@ export default function Home() {
               {/* Chalk texture filter */}
               <defs>
                 <filter id="chalk" x="-5%" y="-5%" width="110%" height="110%">
-                  <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" result="noise" />
-                  <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G" />
+                  <feTurbulence
+                    type="fractalNoise"
+                    baseFrequency="0.65"
+                    numOctaves="3"
+                    result="noise"
+                  />
+                  <feDisplacementMap
+                    in="SourceGraphic"
+                    in2="noise"
+                    scale="2.5"
+                    xChannelSelector="R"
+                    yChannelSelector="G"
+                  />
                 </filter>
               </defs>
 
@@ -176,7 +187,11 @@ export default function Home() {
         <p className="text-lg text-sobek-green-light/80">
           {voice.isConnecting && "Connecting..."}
           {voice.isConnected &&
-            (voice.isSpeaking ? "Agent speaking" : voice.muted ? "Muted" : "Listening")}
+            (voice.isSpeaking
+              ? "Agent speaking"
+              : voice.muted
+                ? "Muted"
+                : "Listening")}
         </p>
 
         {voice.isConnected && (
