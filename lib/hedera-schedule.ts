@@ -12,32 +12,28 @@ import { getHederaClient, getOperatorId, getOperatorKey } from "./hedera";
  * expiration firing so the cron can detect it and release escrow on Base.
  */
 export async function createEscrowSchedule(
-  orderId: string,
-  durationHours: number
+  memoId: string,
+  durationSeconds: number
 ): Promise<{ scheduleId: string; releaseAt: Date }> {
   const client = getHederaClient();
   const operatorId = getOperatorId();
   const operatorKey = getOperatorKey();
 
-  const releaseAt = new Date(Date.now() + durationHours * 60 * 60 * 1000);
+  const releaseAt = new Date(Date.now() + durationSeconds * 1000);
   const expirationTime = Timestamp.fromDate(releaseAt);
 
   // Inner tx: 1-tinybar self-transfer (pure timer, no real transfer).
-  // Frozen and explicitly signed with operator key so the schedule has
-  // all required signatures at creation time and will execute at expiry.
+  // Must NOT be frozen — the SDK freezes it internally when wrapping in schedule.
   const innerTx = new TransferTransaction()
     .addHbarTransfer(operatorId, Hbar.fromTinybars(-1))
-    .addHbarTransfer(operatorId, Hbar.fromTinybars(1))
-    .freezeWith(client);
-
-  const signedInnerTx = await innerTx.sign(operatorKey);
+    .addHbarTransfer(operatorId, Hbar.fromTinybars(1));
 
   const scheduleTx = new ScheduleCreateTransaction()
-    .setScheduledTransaction(signedInnerTx)
+    .setScheduledTransaction(innerTx)
     .setWaitForExpiry(true)
     .setExpirationTime(expirationTime)
     .setAdminKey(operatorKey)
-    .setScheduleMemo(`sobek:order:${orderId}`);
+    .setScheduleMemo(`sobek:escrow:${memoId}`);
 
   const response = await scheduleTx.execute(client);
   const receipt = await response.getReceipt(client);

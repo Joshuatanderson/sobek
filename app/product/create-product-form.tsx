@@ -57,17 +57,17 @@ export function CreateProductForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="escrow_duration_hours">Escrow Duration (hours)</Label>
+            <Label htmlFor="escrow_duration_seconds">Escrow Duration (seconds)</Label>
             <Input
-              id="escrow_duration_hours"
-              name="escrow_duration_hours"
+              id="escrow_duration_seconds"
+              name="escrow_duration_seconds"
               type="number"
               step="1"
               min="1"
-              placeholder="72"
+              placeholder="10"
             />
             <p className="text-xs text-sobek-green-light/50">
-              How long funds are held in escrow before auto-releasing to you. Leave blank for instant payment (no escrow).
+              How long funds are held in escrow before auto-releasing to you. Defaults to 10s if left blank.
             </p>
           </div>
 

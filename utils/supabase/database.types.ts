@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       orders: {
         Row: {
+          chain_id: number
           charge_id: string | null
           client_id: string | null
           created_at: string | null
@@ -35,6 +36,7 @@ export type Database = {
           tx_hash: string | null
         }
         Insert: {
+          chain_id?: number
           charge_id?: string | null
           client_id?: string | null
           created_at?: string | null
@@ -54,6 +56,7 @@ export type Database = {
           tx_hash?: string | null
         }
         Update: {
+          chain_id?: number
           charge_id?: string | null
           client_id?: string | null
           created_at?: string | null
@@ -94,7 +97,7 @@ export type Database = {
           agent_id: string | null
           created_at: string | null
           description: string
-          escrow_duration_hours: number | null
+          escrow_duration_seconds: number | null
           id: string
           price_usdc: number
           status: string
@@ -104,7 +107,7 @@ export type Database = {
           agent_id?: string | null
           created_at?: string | null
           description: string
-          escrow_duration_hours?: number | null
+          escrow_duration_seconds?: number | null
           id?: string
           price_usdc: number
           status?: string
@@ -114,7 +117,7 @@ export type Database = {
           agent_id?: string | null
           created_at?: string | null
           description?: string
-          escrow_duration_hours?: number | null
+          escrow_duration_seconds?: number | null
           id?: string
           price_usdc?: number
           status?: string
@@ -172,6 +175,7 @@ export type Database = {
         Row: {
           created_at: string | null
           display_name: string | null
+          erc8004_agent_id: number | null
           id: string
           last_seen_at: string | null
           reputation_sum: number | null
@@ -183,6 +187,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           display_name?: string | null
+          erc8004_agent_id?: number | null
           id?: string
           last_seen_at?: string | null
           reputation_sum?: number | null
@@ -194,6 +199,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           display_name?: string | null
+          erc8004_agent_id?: number | null
           id?: string
           last_seen_at?: string | null
           reputation_sum?: number | null

@@ -6,6 +6,7 @@ import { notifyUser } from "@/utils/telegram";
 import { revalidatePath } from "next/cache";
 import { createEscrowSchedule } from "@/lib/hedera-schedule";
 import { cancelEscrowSchedule } from "@/lib/hedera-dispute";
+import { ensureAgent } from "@/lib/erc8004";
 
 export async function createProduct(prevState: unknown, formData: FormData) {
   const supabase = await createClient();
@@ -23,8 +24,8 @@ export async function createProduct(prevState: unknown, formData: FormData) {
   const description = formData.get("description") as string;
   const priceRaw = formData.get("price_usdc") as string;
   const price_usdc = parseFloat(priceRaw);
-  const escrowRaw = formData.get("escrow_duration_hours") as string | null;
-  const escrow_duration_hours = escrowRaw ? parseInt(escrowRaw, 10) : null;
+  const escrowRaw = formData.get("escrow_duration_seconds") as string | null;
+  const escrow_duration_seconds = escrowRaw ? parseInt(escrowRaw, 10) : null;
 
   if (!title || !description || isNaN(price_usdc)) {
     return { data: null, error: { message: "Missing required fields" } };
@@ -34,20 +35,32 @@ export async function createProduct(prevState: unknown, formData: FormData) {
     return { data: null, error: { message: "Price must be greater than zero" } };
   }
 
-  if (escrow_duration_hours !== null && (isNaN(escrow_duration_hours) || escrow_duration_hours < 1)) {
-    return { data: null, error: { message: "Escrow duration must be at least 1 hour" } };
+  if (escrow_duration_seconds !== null && (isNaN(escrow_duration_seconds) || escrow_duration_seconds < 1)) {
+    return { data: null, error: { message: "Escrow duration must be at least 1 second" } };
   }
 
   const result = await supabase.from("products").insert({
     title,
     description,
     price_usdc,
-    escrow_duration_hours,
+    escrow_duration_seconds,
     agent_id: user.id,
   }).select();
 
   if (result.error?.code === "23503") {
     return { data: null, error: { message: "User profile not found. Please reconnect your wallet." } };
+  }
+
+  // Fire-and-forget: register seller as ERC-8004 agent
+  const { data: sellerProfile } = await supabase
+    .from("users")
+    .select("wallet_address")
+    .eq("id", user.id)
+    .single();
+
+  if (sellerProfile?.wallet_address) {
+    ensureAgent(supabaseAdmin, user.id, sellerProfile.wallet_address as `0x${string}`)
+      .catch((err) => console.error("Non-fatal: seller agent registration failed:", err));
   }
 
   return { data: result.data, error: result.error };
@@ -79,7 +92,7 @@ export async function createOrder(
   // Look up product to get provider's agent_id and escrow config
   const { data: product, error: productError } = await supabaseAdmin
     .from("products")
-    .select("id, title, price_usdc, agent_id, escrow_duration_hours")
+    .select("id, title, price_usdc, agent_id, escrow_duration_seconds")
     .eq("id", productId)
     .single();
 
@@ -98,9 +111,9 @@ export async function createOrder(
     return { data: null, error: { message: "Failed to resolve client wallet" } };
   }
 
-  // Determine if this order uses escrow
-  const durationHours = product.escrow_duration_hours;
-  const usesEscrow = escrowRegistration != null && durationHours != null && durationHours > 0;
+  // Determine escrow duration — default 10s if not set
+  const durationSeconds = product.escrow_duration_seconds ?? 10;
+  const usesEscrow = escrowRegistration != null && durationSeconds > 0;
 
   // If escrow, create Hedera schedule BEFORE inserting the order.
   // This prevents zombie orders stuck in 'pending_schedule' if Hedera fails.
@@ -109,7 +122,7 @@ export async function createOrder(
 
   if (usesEscrow) {
     try {
-      const schedule = await createEscrowSchedule(productId, durationHours);
+      const schedule = await createEscrowSchedule(productId, durationSeconds);
       scheduleId = schedule.scheduleId;
       releaseAt = schedule.releaseAt;
     } catch (err) {
@@ -141,6 +154,10 @@ export async function createOrder(
   if (orderError) {
     return { data: null, error: { message: orderError.message } };
   }
+
+  // Fire-and-forget: register buyer as ERC-8004 agent
+  ensureAgent(supabaseAdmin, client.id, walletAddress as `0x${string}`)
+    .catch((err) => console.error("Non-fatal: buyer agent registration failed:", err));
 
   // Notify provider via Telegram
   if (product.agent_id) {

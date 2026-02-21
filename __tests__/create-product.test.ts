@@ -7,7 +7,10 @@ vi.mock("@/utils/supabase/server", () => ({
   createClient: () =>
     Promise.resolve({
       auth: { getUser: () => mockGetUser() },
-      from: () => ({ insert: (data: unknown) => mockInsert(data) }),
+      from: () => ({
+        insert: (data: unknown) => mockInsert(data),
+        select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { wallet_address: "0xabc" }, error: null }) }) }),
+      }),
     }),
 }));
 
@@ -21,6 +24,10 @@ vi.mock("@/utils/telegram", () => ({
 
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
+}));
+
+vi.mock("@/lib/erc8004", () => ({
+  ensureAgent: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { createProduct } from "@/app/product/actions";
@@ -81,7 +88,7 @@ describe("createProduct", () => {
       title: "Logo",
       description: "Make a logo",
       price_usdc: 25,
-      escrow_duration_hours: null,
+      escrow_duration_seconds: null,
       agent_id: "user-1",
     });
   });
