@@ -14,7 +14,7 @@ import { parseUnits, parseEther, formatUnits, erc20Abi, parseAbi, decodeEventLog
 import { wagmiConfig } from "@/config/wagmi";
 import { USDC_BY_CHAIN, ETH_USD_PRICE, ESCROW_BY_CHAIN, PLATFORM_FEE_MULTIPLIER } from "@/config/constants";
 import { TOKENS_BY_CHAIN, SUPPORTED_TOKENS } from "@/config/tokens";
-import { createOrder } from "@/app/product/actions";
+import { createTransaction } from "@/app/product/actions";
 
 export interface Message {
   role: "user" | "agent";
@@ -167,13 +167,13 @@ export function useSobekVoice({ onNavigate }: SobekVoiceOptions = {}) {
           }
 
           const currency = payment_method === "usdc" ? "USDC" : "ETH";
-          const orderResult = await createOrder(product_id, txHash, account.address!, currency, registration);
+          const orderResult = await createTransaction(product_id, txHash, account.address!, currency, registration, chainId);
 
           if (orderResult.error) {
-            return `Payment went through on-chain (tx: ${txHash}), but there was an issue recording the order: ${orderResult.error.message}. The funds are held safely in escrow.`;
+            return `Payment went through on-chain (tx: ${txHash}), but there was an issue recording the transaction: ${orderResult.error.message}. The funds are held safely in escrow.`;
           }
 
-          return `Payment successful! The order for "${product.title}" has been placed via escrow. Transaction hash: ${txHash}.`;
+          return `Payment successful! The transaction for "${product.title}" has been placed via escrow. Transaction hash: ${txHash}.`;
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message.split("\n")[0] : "Unknown error";
           return `Payment failed: ${message}. The user may have rejected the transaction or there was a network issue.`;
