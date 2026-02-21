@@ -12,19 +12,19 @@ import { useSobekVoice } from "@/hooks/useSobekVoice";
 
 const USE_CASES = [
   {
-    title: "Sobek Swaps",
+    title: "Swap tokens",
     description:
       "Swap any token instantly via Uniswap. Voice-powered trades with the best onchain rates.",
     image: "/sobek-swaps.png",
   },
   {
-    title: "Sobek Reputation",
+    title: "Decentralized reputation",
     description:
       "Onchain reputation for humans and agents. Identify trustworthy vendors before you transact.",
     image: "/sobek-buys.png",
   },
   {
-    title: "Sobek Escrow",
+    title: "Schedule and escrow transactions",
     description:
       "Place funds in escrow and schedule payments on the blockchain. Trustless, automated, onchain.",
     image: "/sobek-escrow.png",
@@ -73,17 +73,46 @@ export default function Home() {
       </div>
 
       {/* Orb */}
-      <div className="flex flex-col items-center gap-4 mb-8">
+      <div className="relative flex flex-col items-center gap-4 mb-8">
         <button
           onClick={voice.isConnected ? voice.end : voice.start}
           disabled={voice.isConnecting}
           className={`orb relative z-10 ${voice.isSpeaking ? "orb-speaking" : ""} ${voice.isConnected ? "orb-connected" : ""} ${voice.isConnecting ? "opacity-60" : ""}`}
         />
 
+        {/* Chalk arrow annotation */}
+        {voice.status === "disconnected" && (
+          <div className="absolute -right-36 sm:-right-44 top-0 animate-pulse-subtle pointer-events-none select-none">
+            <p className="text-sobek-green-light/80 text-lg italic -rotate-6 whitespace-nowrap chalk-text">
+              click to start
+            </p>
+            <svg
+              width="100"
+              height="80"
+              viewBox="0 0 100 80"
+              fill="none"
+              className="ml-2 -mt-1"
+            >
+              <path
+                d="M80 8 C60 10, 40 30, 20 55 Q12 65, 8 72"
+                stroke="rgba(205, 223, 197, 0.7)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeDasharray="4 3"
+                fill="none"
+              />
+              {/* Arrowhead */}
+              <path
+                d="M8 72 L14 62 M8 72 L18 70"
+                stroke="rgba(205, 223, 197, 0.7)"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+        )}
+
         <p className="text-lg text-sobek-green-light/80">
-          {voice.status === "disconnected" && (
-            <span className="animate-pulse-subtle">Click the orb to talk to Sobek.</span>
-          )}
           {voice.isConnecting && "Connecting..."}
           {voice.isConnected &&
             (voice.isSpeaking ? "Agent speaking" : voice.muted ? "Muted" : "Listening")}
