@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { createClient } from "@/utils/supabase/server";
 import { Header } from "@/components/header";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -68,7 +70,40 @@ function escrowBadge(status: string | null) {
   );
 }
 
-export default async function OrdersPage() {
+function OrdersTableSkeleton() {
+  return (
+    <div className="rounded-lg border border-sobek-forest/30 overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow className="border-sobek-forest/30">
+            <TableHead className="text-sobek-green-light/80">Product</TableHead>
+            <TableHead className="text-sobek-green-light/80 text-right">Amount</TableHead>
+            <TableHead className="text-sobek-green-light/80">Buyer</TableHead>
+            <TableHead className="text-sobek-green-light/80">Status</TableHead>
+            <TableHead className="text-sobek-green-light/80">Escrow</TableHead>
+            <TableHead className="text-sobek-green-light/80">Tx</TableHead>
+            <TableHead className="text-sobek-green-light/80">Date</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <TableRow key={i} className="border-sobek-forest/30">
+              <TableCell><Skeleton className="h-4 w-32 bg-sobek-forest/30" /></TableCell>
+              <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto bg-sobek-forest/30" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-24 bg-sobek-forest/30" /></TableCell>
+              <TableCell><Skeleton className="h-5 w-14 bg-sobek-forest/30" /></TableCell>
+              <TableCell><Skeleton className="h-5 w-14 bg-sobek-forest/30" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-20 bg-sobek-forest/30" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-28 bg-sobek-forest/30" /></TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+async function OrdersTable() {
   const supabase = await createClient();
 
   const { data: orders, error } = await supabase
@@ -76,9 +111,16 @@ export default async function OrdersPage() {
     .select("id, status, escrow_status, tx_hash, created_at, paid_at, release_at, escrow_registration, product_id, client_id")
     .order("created_at", { ascending: false });
 
-  // Resolve product titles and buyer info in parallel
-  const productIds = [...new Set((orders ?? []).map((o) => o.product_id).filter(Boolean))] as string[];
-  const clientIds = [...new Set((orders ?? []).map((o) => o.client_id).filter(Boolean))] as string[];
+  if (error) {
+    return <p className="text-red-400">Failed to load orders: {error.message}</p>;
+  }
+
+  if (!orders || orders.length === 0) {
+    return <p className="text-sobek-green-light/80">No orders yet.</p>;
+  }
+
+  const productIds = [...new Set(orders.map((o) => o.product_id).filter(Boolean))] as string[];
+  const clientIds = [...new Set(orders.map((o) => o.client_id).filter(Boolean))] as string[];
 
   const [productsRes, usersRes] = await Promise.all([
     productIds.length > 0
@@ -93,6 +135,56 @@ export default async function OrdersPage() {
   const usersMap = new Map((usersRes.data ?? []).map((u) => [u.id, u]));
 
   return (
+    <div className="rounded-lg border border-sobek-forest/30 overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow className="border-sobek-forest/30 hover:bg-sobek-forest/20">
+            <TableHead className="text-sobek-green-light/80">Product</TableHead>
+            <TableHead className="text-sobek-green-light/80 text-right">Amount</TableHead>
+            <TableHead className="text-sobek-green-light/80">Buyer</TableHead>
+            <TableHead className="text-sobek-green-light/80">Status</TableHead>
+            <TableHead className="text-sobek-green-light/80">Escrow</TableHead>
+            <TableHead className="text-sobek-green-light/80">Tx</TableHead>
+            <TableHead className="text-sobek-green-light/80">Date</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {(orders as OrderRow[]).map((order) => {
+            const product = order.product_id ? productsMap.get(order.product_id) : null;
+            const buyer = order.client_id ? usersMap.get(order.client_id) : null;
+            return (
+              <TableRow key={order.id} className="border-sobek-forest/30 hover:bg-sobek-forest/20">
+                <TableCell className="font-medium text-sobek-green-light">
+                  {product?.title ?? "Unknown"}
+                </TableCell>
+                <TableCell className="text-right text-sobek-green-light">
+                  {product ? `$${product.price_usdc.toFixed(2)}` : "\u2014"}
+                </TableCell>
+                <TableCell className="text-sobek-green-light/70">
+                  {buyer?.display_name ??
+                    (buyer?.wallet_address
+                      ? truncateHash(buyer.wallet_address)
+                      : "Unknown")}
+                </TableCell>
+                <TableCell>{statusBadge(order.status)}</TableCell>
+                <TableCell>{escrowBadge(order.escrow_status)}</TableCell>
+                <TableCell className="text-sobek-green-light/70 font-mono text-xs">
+                  {order.tx_hash ? truncateHash(order.tx_hash) : "\u2014"}
+                </TableCell>
+                <TableCell className="text-sobek-green-light/70 text-xs">
+                  {formatDate(order.created_at)}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+export default function OrdersPage() {
+  return (
     <div className="flex min-h-screen flex-col items-center bg-[#0a0f0a] text-white font-sans">
       <Header />
 
@@ -104,57 +196,9 @@ export default async function OrdersPage() {
           </p>
         </div>
 
-        {error ? (
-          <p className="text-red-400">Failed to load orders: {error.message}</p>
-        ) : !orders || orders.length === 0 ? (
-          <p className="text-sobek-green-light/80">No orders yet.</p>
-        ) : (
-          <div className="rounded-lg border border-sobek-forest/30 overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-sobek-forest/30 hover:bg-sobek-forest/20">
-                  <TableHead className="text-sobek-green-light/80">Product</TableHead>
-                  <TableHead className="text-sobek-green-light/80 text-right">Amount</TableHead>
-                  <TableHead className="text-sobek-green-light/80">Buyer</TableHead>
-                  <TableHead className="text-sobek-green-light/80">Status</TableHead>
-                  <TableHead className="text-sobek-green-light/80">Escrow</TableHead>
-                  <TableHead className="text-sobek-green-light/80">Tx</TableHead>
-                  <TableHead className="text-sobek-green-light/80">Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(orders as OrderRow[]).map((order) => {
-                  const product = order.product_id ? productsMap.get(order.product_id) : null;
-                  const buyer = order.client_id ? usersMap.get(order.client_id) : null;
-                  return (
-                    <TableRow key={order.id} className="border-sobek-forest/30 hover:bg-sobek-forest/20">
-                      <TableCell className="font-medium text-sobek-green-light">
-                        {product?.title ?? "Unknown"}
-                      </TableCell>
-                      <TableCell className="text-right text-sobek-green-light">
-                        {product ? `$${product.price_usdc.toFixed(2)}` : "\u2014"}
-                      </TableCell>
-                      <TableCell className="text-sobek-green-light/70">
-                        {buyer?.display_name ??
-                          (buyer?.wallet_address
-                            ? truncateHash(buyer.wallet_address)
-                            : "Unknown")}
-                      </TableCell>
-                      <TableCell>{statusBadge(order.status)}</TableCell>
-                      <TableCell>{escrowBadge(order.escrow_status)}</TableCell>
-                      <TableCell className="text-sobek-green-light/70 font-mono text-xs">
-                        {order.tx_hash ? truncateHash(order.tx_hash) : "\u2014"}
-                      </TableCell>
-                      <TableCell className="text-sobek-green-light/70 text-xs">
-                        {formatDate(order.created_at)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+        <Suspense fallback={<OrdersTableSkeleton />}>
+          <OrdersTable />
+        </Suspense>
       </div>
     </div>
   );
