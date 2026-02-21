@@ -8,10 +8,7 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
-import { ESCROW_BY_CHAIN } from "@/config/constants";
-
-// Re-import adiTestnet as a viem-compatible chain (wagmi's Chain satisfies viem's)
-import { adiTestnet } from "@/config/constants";
+import { ESCROW_BY_CHAIN, adiTestnet } from "@/config/constants";
 
 const ESCROW_ABI = parseAbi([
   "function releaseToReceiver(uint256 registration) public payable",
