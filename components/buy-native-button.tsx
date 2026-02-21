@@ -112,7 +112,7 @@ export function BuyNativeButton({
     <Button size="sm" variant="outline" onClick={handleBuy} disabled={isLoading}>
       {status === "depositing" && "Depositing..."}
       {status === "submitting" && "Creating transaction..."}
-      {status === "idle" && `$${price.toFixed(2)} in ${nativeCurrency.symbol}`}
+      {status === "idle" && `$${(price * PLATFORM_FEE_MULTIPLIER).toFixed(2)} in ${nativeCurrency.symbol}`}
     </Button>
   );
 }

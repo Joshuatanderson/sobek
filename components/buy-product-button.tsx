@@ -122,7 +122,7 @@ export function BuyProductButton({
       {status === "approving" && "Approving..."}
       {status === "depositing" && "Depositing..."}
       {status === "submitting" && "Creating transaction..."}
-      {status === "idle" && `Buy $${priceUsdc.toFixed(2)}`}
+      {status === "idle" && `Buy $${(priceUsdc * PLATFORM_FEE_MULTIPLIER).toFixed(2)}`}
     </Button>
   );
 }

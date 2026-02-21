@@ -143,7 +143,7 @@ export function CreateProductForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="price_usdc">Price (USDC)</Label>
+          <Label htmlFor="price_usdc">Price (USDC) — what you receive</Label>
           <Input
             id="price_usdc"
             name="price_usdc"
@@ -153,6 +153,9 @@ export function CreateProductForm() {
             placeholder="100.00"
             required
           />
+          <p className="text-xs text-sobek-green-light/50">
+            This is the amount you receive. Buyers pay a 5% platform fee on top.
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -178,15 +181,11 @@ export function CreateProductForm() {
         </Button>
       </form>
 
-      {state && (
-        <div className="space-y-2">
-          <h2 className="text-sm font-medium text-sobek-green-light/80">
-            Debug Response
-          </h2>
-          <pre className="rounded-lg bg-sobek-forest/50 border border-sobek-forest/30 p-4 text-sm text-sobek-green-light/70 overflow-x-auto whitespace-pre-wrap">
-            {JSON.stringify(state, null, 2)}
-          </pre>
-        </div>
+      {state && "error" in state && (
+        <p className="text-red-400 text-sm">{String(state.error)}</p>
+      )}
+      {state && "id" in state && (
+        <p className="text-sobek-green-light/80 text-sm">Product created successfully.</p>
       )}
     </>
   );
