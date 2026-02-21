@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DisputeActions } from "./dispute-actions";
 
 type TransactionRow = {
   id: string;
@@ -72,6 +73,7 @@ function TransactionsTableSkeleton() {
             <TableHead className="text-sobek-green-light/80">Status</TableHead>
             <TableHead className="text-sobek-green-light/80">Tx</TableHead>
             <TableHead className="text-sobek-green-light/80">Date</TableHead>
+            <TableHead className="text-sobek-green-light/80">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -83,6 +85,7 @@ function TransactionsTableSkeleton() {
               <TableCell><Skeleton className="h-5 w-14 bg-sobek-forest/30" /></TableCell>
               <TableCell><Skeleton className="h-4 w-20 bg-sobek-forest/30" /></TableCell>
               <TableCell><Skeleton className="h-4 w-28 bg-sobek-forest/30" /></TableCell>
+              <TableCell />
             </TableRow>
           ))}
         </TableBody>
@@ -133,6 +136,7 @@ async function TransactionsTable() {
             <TableHead className="text-sobek-green-light/80">Status</TableHead>
             <TableHead className="text-sobek-green-light/80">Tx</TableHead>
             <TableHead className="text-sobek-green-light/80">Date</TableHead>
+            <TableHead className="text-sobek-green-light/80">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -159,6 +163,11 @@ async function TransactionsTable() {
                 </TableCell>
                 <TableCell className="text-sobek-green-light/70 text-xs">
                   {formatDate(transaction.created_at)}
+                </TableCell>
+                <TableCell>
+                  {transaction.escrow_status === "disputed" && (
+                    <DisputeActions transactionId={transaction.id} />
+                  )}
                 </TableCell>
               </TableRow>
             );
