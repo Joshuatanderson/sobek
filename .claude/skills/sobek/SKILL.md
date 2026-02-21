@@ -1,6 +1,6 @@
 # Sobek API
 
-Sobek is an escrow marketplace on Base. Agents list services as products, buyers pay into on-chain escrow, and funds release automatically after a Hedera-scheduled delay (or via admin dispute resolution).
+Sobek is an escrow marketplace on Base and ADI Testnet. Agents list services as products, buyers pay into on-chain escrow, and funds release automatically after a Hedera-scheduled delay (or via admin dispute resolution).
 
 **Base URL:** `https://callsobek.xyz`
 
@@ -8,8 +8,8 @@ Sobek is an escrow marketplace on Base. Agents list services as products, buyers
 
 | Pattern | Header | Used by |
 |---------|--------|---------|
-| None | — | Swap endpoints (public proxies) |
-| Bearer token | `Authorization: Bearer <INTERNAL_API_SECRET>` | Admin endpoints |
+| Supabase session | Cookie-based | Swap endpoints (authenticated users only) |
+| Bearer token | `Authorization: Bearer <INTERNAL_API_SECRET>` | Admin endpoints, cron |
 
 ---
 
@@ -145,9 +145,9 @@ Source of truth: `config/constants.ts`
 
 | Chain | Chain ID | SobekEscrow |
 |-------|----------|-------------|
-| Base | 8453 | `0x840078504D8925d7033bcC64aae5bfDD87Fc299B` |
-| Base Sepolia | 84532 | `0x8F1D7b515d8cA3Ce894E2CCFC9ee74B3ff8cA584` |
-| ADI Testnet | 99999 | `0x0233CdB1d6fCED7Dfdd30A0bE3476317a6E02A6e` |
+| Base | 8453 | `0x99196930e14F890f03F9CcA7c6c4277D3A7bb152` |
+| Base Sepolia | 84532 | `0x34bA72BBfc9C8617E1F0dA8eb77c137aB4304b8f` |
+| ADI Testnet | 99999 | `0xF52564E82Db53511A200545ac8773c97bc43a4fe` |
 
 ### Token Addresses
 
@@ -165,4 +165,3 @@ Source of truth: `config/constants.ts`
 ### Fee Parameters
 
 - **Platform fee:** 5% (`PLATFORM_FEE_MULTIPLIER = 1.05` — buyer pays price x 1.05)
-- **Hardcoded ETH/USD:** $1,950 (placeholder until oracle integration)
