@@ -24,14 +24,18 @@ function UsersTableSkeleton() {
         <TableHeader>
           <TableRow className="border-sobek-forest/30">
             <TableHead className="text-sobek-green-light/80">User</TableHead>
+            <TableHead className="text-sobek-green-light/80">Wallet</TableHead>
+            <TableHead className="text-sobek-green-light/80">Agent ID</TableHead>
             <TableHead className="text-sobek-green-light/80 text-right">Reputation</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {Array.from({ length: 3 }).map((_, i) => (
             <TableRow key={i} className="border-sobek-forest/30">
-              <TableCell><Skeleton className="h-4 w-32 bg-sobek-forest/30" /></TableCell>
-              <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto bg-sobek-forest/30" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-24 bg-sobek-forest/30" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-28 bg-sobek-forest/30" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-16 bg-sobek-forest/30" /></TableCell>
+              <TableCell className="text-right"><Skeleton className="h-4 w-12 ml-auto bg-sobek-forest/30" /></TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -53,28 +57,42 @@ async function UsersTable() {
         <TableHeader>
           <TableRow className="border-sobek-forest/30 hover:bg-sobek-forest/20">
             <TableHead className="text-sobek-green-light/80">User</TableHead>
+            <TableHead className="text-sobek-green-light/80">Wallet</TableHead>
+            <TableHead className="text-sobek-green-light/80">Agent ID</TableHead>
             <TableHead className="text-sobek-green-light/80 text-right">Reputation</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {users.map((user) => {
-            const label = user.display_name || truncateWallet(user.wallet_address);
             const hasAgent = user.erc8004_agent_id != null;
 
             return (
               <TableRow key={user.wallet_address} className="border-sobek-forest/30 hover:bg-sobek-forest/20">
                 <TableCell className="font-medium text-sobek-green-light">
+                  {user.display_name || truncateWallet(user.wallet_address)}
+                </TableCell>
+                <TableCell className="text-sobek-green-light/70">
+                  <a
+                    href={`https://sepolia.basescan.org/address/${user.wallet_address}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sobek-gold underline hover:text-sobek-gold/80 transition-colors"
+                  >
+                    {truncateWallet(user.wallet_address)}
+                  </a>
+                </TableCell>
+                <TableCell>
                   {hasAgent ? (
                     <a
                       href={`https://sepolia.basescan.org/nft/${NFT_CONTRACT}/${user.erc8004_agent_id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="underline hover:text-sobek-gold transition-colors"
+                      className="text-sobek-gold underline hover:text-sobek-gold/80 transition-colors"
                     >
-                      {label}
+                      #{user.erc8004_agent_id}
                     </a>
                   ) : (
-                    label
+                    <span className="text-sobek-green-light/40">—</span>
                   )}
                 </TableCell>
                 <TableCell className="text-right text-sobek-green-light/70">
