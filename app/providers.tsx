@@ -6,6 +6,7 @@ import { WagmiProvider, cookieToInitialState } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { wagmiConfig } from "@/config/wagmi";
+import { AuthProvider } from "@/contexts/auth-context";
 
 export function Providers({
   children,
@@ -54,7 +55,7 @@ export function Providers({
             },
           }}
         >
-          {children}
+          <AuthProvider>{children}</AuthProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

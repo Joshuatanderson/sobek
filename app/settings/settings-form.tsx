@@ -5,13 +5,18 @@ import { updateDisplayName } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/auth-context";
 
-export function SettingsForm({
-  currentDisplayName,
-}: {
-  currentDisplayName: string | null;
-}) {
-  const [state, formAction, isPending] = useActionState(updateDisplayName, null);
+export function SettingsForm() {
+  const { userProfile, refreshProfile } = useAuth();
+  const [state, formAction, isPending] = useActionState(
+    async (prev: unknown, formData: FormData) => {
+      const result = await updateDisplayName(prev, formData);
+      if (result?.success) await refreshProfile();
+      return result;
+    },
+    null
+  );
 
   return (
     <form action={formAction} className="space-y-6">
@@ -21,7 +26,8 @@ export function SettingsForm({
           id="display_name"
           name="display_name"
           placeholder="Enter your display name"
-          defaultValue={currentDisplayName ?? ""}
+          defaultValue={userProfile?.display_name ?? ""}
+          key={userProfile?.display_name}
           required
         />
         <p className="text-xs text-sobek-green-light/60">

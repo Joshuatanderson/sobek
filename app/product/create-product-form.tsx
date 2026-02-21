@@ -4,8 +4,7 @@ import { useActionState, useState } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { writeContract, waitForTransactionReceipt } from "@wagmi/core";
 import { wagmiConfig } from "@/config/wagmi";
-import { useWalletAuth } from "@/hooks/useWalletAuth";
-import { useAgentStatus } from "@/hooks/useAgentStatus";
+import { useAuth } from "@/contexts/auth-context";
 import { buildAgentURI, IDENTITY_ABI } from "@/lib/erc8004";
 import { ERC8004_IDENTITY_REGISTRY } from "@/config/constants";
 import { createProduct, storeAgentId } from "./actions";
@@ -15,10 +14,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
 export function CreateProductForm() {
-  const { isConnected, address } = useWalletAuth();
-  const { hasAgent, loading: agentLoading, setRegistered } = useAgentStatus();
+  const { isConnected, address, userProfile, loading, refreshProfile } =
+    useAuth();
+  const hasAgent = !!userProfile?.erc8004_agent_id;
   const [state, formAction, isPending] = useActionState(createProduct, null);
-  const [regStatus, setRegStatus] = useState<"idle" | "registering" | "error">("idle");
+  const [regStatus, setRegStatus] = useState<
+    "idle" | "registering" | "error"
+  >("idle");
   const [regError, setRegError] = useState("");
 
   async function handleRegister() {
@@ -44,7 +46,11 @@ export function CreateProductForm() {
       // Parse Transfer event for tokenId
       let tokenId: bigint | null = null;
       for (const log of receipt.logs) {
-        if (log.address.toLowerCase() !== ERC8004_IDENTITY_REGISTRY.toLowerCase()) continue;
+        if (
+          log.address.toLowerCase() !==
+          ERC8004_IDENTITY_REGISTRY.toLowerCase()
+        )
+          continue;
         if (log.topics.length >= 4 && log.topics[3]) {
           tokenId = BigInt(log.topics[3]);
           break;
@@ -61,24 +67,28 @@ export function CreateProductForm() {
         throw new Error(result.error.message);
       }
 
-      setRegistered(Number(tokenId));
+      await refreshProfile();
       setRegStatus("idle");
     } catch (err: unknown) {
       setRegStatus("error");
-      setRegError(err instanceof Error ? err.message.split("\n")[0] : "Registration failed");
+      setRegError(
+        err instanceof Error ? err.message.split("\n")[0] : "Registration failed"
+      );
     }
   }
 
   if (!isConnected) {
     return (
       <div className="rounded-lg border border-sobek-forest/30 bg-sobek-forest/50 p-6 space-y-4">
-        <p className="text-sobek-green-light/80">Connect your wallet to create a product.</p>
+        <p className="text-sobek-green-light/80">
+          Connect your wallet to create a product.
+        </p>
         <ConnectButton />
       </div>
     );
   }
 
-  if (agentLoading) {
+  if (loading) {
     return (
       <div className="rounded-lg border border-sobek-forest/30 bg-sobek-forest/50 p-6">
         <p className="text-sobek-green-light/80">Loading...</p>
@@ -90,7 +100,8 @@ export function CreateProductForm() {
     return (
       <div className="rounded-lg border border-sobek-forest/30 bg-sobek-forest/50 p-6 space-y-4">
         <p className="text-sobek-green-light/80">
-          Register as a seller to list products. This mints a soulbound identity token to your wallet.
+          Register as a seller to list products. This mints a soulbound
+          identity token to your wallet.
         </p>
         <Button
           onClick={handleRegister}
@@ -145,7 +156,9 @@ export function CreateProductForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="escrow_duration_seconds">Escrow Duration (seconds)</Label>
+          <Label htmlFor="escrow_duration_seconds">
+            Escrow Duration (seconds)
+          </Label>
           <Input
             id="escrow_duration_seconds"
             name="escrow_duration_seconds"
@@ -155,7 +168,8 @@ export function CreateProductForm() {
             placeholder="10"
           />
           <p className="text-xs text-sobek-green-light/50">
-            How long funds are held in escrow before auto-releasing to you. Defaults to 10s if left blank.
+            How long funds are held in escrow before auto-releasing to you.
+            Defaults to 10s if left blank.
           </p>
         </div>
 
@@ -166,7 +180,9 @@ export function CreateProductForm() {
 
       {state && (
         <div className="space-y-2">
-          <h2 className="text-sm font-medium text-sobek-green-light/80">Debug Response</h2>
+          <h2 className="text-sm font-medium text-sobek-green-light/80">
+            Debug Response
+          </h2>
           <pre className="rounded-lg bg-sobek-forest/50 border border-sobek-forest/30 p-4 text-sm text-sobek-green-light/70 overflow-x-auto whitespace-pre-wrap">
             {JSON.stringify(state, null, 2)}
           </pre>

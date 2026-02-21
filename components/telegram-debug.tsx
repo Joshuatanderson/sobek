@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAccount } from "wagmi";
+import { useAuth } from "@/contexts/auth-context";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 
 const supabase = createClient();
 
 export function TelegramDebug() {
-  const { isConnected } = useAccount();
+  const { isConnected } = useAuth();
   const [webhookInfo, setWebhookInfo] = useState<Record<string, unknown> | null>(null);
   const [userRow, setUserRow] = useState<Record<string, unknown> | null>(null);
   const [settingWebhook, setSettingWebhook] = useState(false);

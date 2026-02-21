@@ -3,7 +3,6 @@
 export const dynamic = "force-dynamic";
 
 import { useRef, useEffect } from "react";
-import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { SobekMascot } from "@/components/SobekMascot";
@@ -34,7 +33,6 @@ const USE_CASES = [
 
 export default function Home() {
   const transcriptRef = useRef<HTMLDivElement>(null);
-  useWalletAuth();
   const voice = useSobekVoice();
 
   useEffect(() => {

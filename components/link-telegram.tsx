@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useAccount } from "wagmi";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { generateTelegramLink, unlinkTelegram } from "@/app/telegram/actions";
-import { createClient } from "@/utils/supabase/client";
+import { useAuth } from "@/contexts/auth-context";
 
 function TelegramIcon({ className }: { className?: string }) {
   return (
@@ -14,52 +13,32 @@ function TelegramIcon({ className }: { className?: string }) {
   );
 }
 
-const supabase = createClient();
-
 export function LinkTelegram() {
-  const { isConnected } = useAccount();
-  const [handle, setHandle] = useState<string | null>(null);
+  const { isConnected, userProfile, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fetchStatus = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data } = await supabase
-      .from("users")
-      .select("telegram_handle, telegram_chat_id")
-      .eq("id", user.id)
-      .single();
-    if (data?.telegram_chat_id) {
-      setHandle(data.telegram_handle ?? "linked");
-      // Stop polling once linked
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
     }
   }, []);
 
-  useEffect(() => {
-    if (!isConnected) {
-      setHandle(null);
-      return;
-    }
-
-    fetchStatus();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session?.user) fetchStatus();
-      if (event === "SIGNED_OUT") setHandle(null);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, [isConnected, fetchStatus]);
+  const pollForLink = useCallback(async () => {
+    await refreshProfile();
+  }, [refreshProfile]);
 
   if (!isConnected) return null;
+
+  const handle = userProfile?.telegram_chat_id
+    ? userProfile.telegram_handle ?? "linked"
+    : null;
+
+  // Stop polling once linked
+  if (handle && pollRef.current) {
+    stopPolling();
+  }
 
   async function handleLink() {
     setLoading(true);
@@ -67,7 +46,7 @@ export function LinkTelegram() {
     if (url) {
       window.open(url, "_blank");
       // Poll every 2s until the webhook writes telegram_chat_id
-      pollRef.current = setInterval(fetchStatus, 2000);
+      pollRef.current = setInterval(pollForLink, 2000);
     }
     setLoading(false);
   }
@@ -75,7 +54,7 @@ export function LinkTelegram() {
   async function handleUnlink() {
     setLoading(true);
     const { error } = await unlinkTelegram();
-    if (!error) setHandle(null);
+    if (!error) await refreshProfile();
     setLoading(false);
   }
 

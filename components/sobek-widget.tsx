@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useSobekVoice } from "@/hooks/useSobekVoice";
-import { useWalletAuth } from "@/hooks/useWalletAuth";
 import { OrbScales } from "@/components/orb-scales";
 
 export function SobekWidget() {
@@ -13,7 +12,6 @@ export function SobekWidget() {
   const transcriptRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const voice = useSobekVoice({ onNavigate: (path) => router.push(path) });
-  useWalletAuth();
 
   useEffect(() => {
     if (transcriptRef.current) {

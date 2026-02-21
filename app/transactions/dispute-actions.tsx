@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount } from "wagmi";
+import { useAuth } from "@/contexts/auth-context";
 import { ARBITER_ADDRESS } from "@/config/constants";
 import { resolveDispute } from "./actions";
 
 export function DisputeActions({ transactionId }: { transactionId: string }) {
-  const { address } = useAccount();
+  const { address } = useAuth();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
