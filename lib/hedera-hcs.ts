@@ -9,6 +9,7 @@ export interface TierTransitionMessage {
   reputationScore: number;
   transactionId: string;
   timestamp: string;
+  erc8004_agent_id?: number | null;
 }
 
 export interface ReputationEventMessage {
@@ -19,6 +20,7 @@ export interface ReputationEventMessage {
   amount_usd: number;
   transaction_id: string;
   timestamp: string;
+  erc8004_agent_id?: number | null;
 }
 
 /**

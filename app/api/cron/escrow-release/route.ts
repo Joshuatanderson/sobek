@@ -12,8 +12,8 @@ import { giveFeedback } from "@/lib/erc8004";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  // Verify cron secret
-  const secret = process.env.INTERNAL_API_SECRET;
+  // Verify cron secret (Vercel sends CRON_SECRET as Bearer token automatically)
+  const secret = process.env.CRON_SECRET;
   const authHeader = request.headers.get("authorization");
   if (!secret || authHeader !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -147,6 +147,7 @@ export async function GET(request: Request) {
               amount_usd: product.price_usdc,
               transaction_id: transaction.id,
               timestamp: new Date().toISOString(),
+              erc8004_agent_id: sellerUser?.erc8004_agent_id ?? null,
             });
             await supabaseAdmin.from("reputation_events")
               .update({ hcs_sequence: seq })
@@ -162,7 +163,7 @@ export async function GET(request: Request) {
         if (beforeMrate && beforeMrate.tier !== after.tier) {
           const { data: updatedUser } = await supabaseAdmin
             .from("users")
-            .select("reputation_sum")
+            .select("reputation_score")
             .eq("wallet_address", receiverWallet)
             .single();
 
@@ -170,9 +171,10 @@ export async function GET(request: Request) {
             wallet: receiverWallet,
             previousTier: beforeMrate.tier,
             newTier: after.tier,
-            reputationScore: updatedUser?.reputation_sum ?? 0,
+            reputationScore: updatedUser?.reputation_score ?? 0,
             transactionId: transaction.id,
             timestamp: new Date().toISOString(),
+            erc8004_agent_id: sellerUser?.erc8004_agent_id ?? null,
           });
         }
       }
