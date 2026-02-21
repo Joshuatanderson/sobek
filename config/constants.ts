@@ -8,7 +8,8 @@ export const adiTestnet = {
   rpcUrls: {
     default: { http: ["https://rpc.ab.testnet.adifoundation.ai/"] },
   },
-} as const satisfies Chain;
+  iconUrl: "/adi-diamond.png",
+} as const satisfies Chain & { iconUrl: string };
 
 /** Deployed SobekEscrow contract addresses per chain (public, not secrets) */
 export const ESCROW_BY_CHAIN: Record<number, `0x${string}`> = {
