@@ -108,6 +108,61 @@ export function useSobekVoice({ onNavigate }: SobekVoiceOptions = {}) {
           return "Sorry, something went wrong fetching products.";
         }
       },
+      get_sellers: async () => {
+        console.log(`${TAG} tool:get_sellers`);
+        try {
+          const supabase = createClient();
+
+          // Get all sellers who have at least one product, with their reputation and product count
+          const { data: products, error } = await supabase
+            .from("products")
+            .select("id, title, price_usdc, users:agent_id(display_name, wallet_address, reputation_score)");
+
+          if (error) return "Sorry, I couldn't fetch seller information right now.";
+          if (!products || products.length === 0) return "There are no sellers on the platform yet.";
+
+          // Group products by seller
+          const sellerMap = new Map<string, {
+            name: string;
+            wallet: string;
+            reputation: number;
+            productCount: number;
+            products: string[];
+          }>();
+
+          for (const p of products) {
+            const user = p.users as { display_name: string | null; wallet_address: string; reputation_score: number | null } | null;
+            if (!user) continue;
+            const key = user.wallet_address;
+            const existing = sellerMap.get(key);
+            if (existing) {
+              existing.productCount++;
+              existing.products.push(p.title);
+            } else {
+              sellerMap.set(key, {
+                name: user.display_name || "Anonymous",
+                wallet: user.wallet_address,
+                reputation: user.reputation_score ?? 0,
+                productCount: 1,
+                products: [p.title],
+              });
+            }
+          }
+
+          // Sort sellers by reputation descending
+          const sellers = Array.from(sellerMap.values()).sort((a, b) => b.reputation - a.reputation);
+
+          const lines = sellers.map((s, i) => {
+            const rank = i + 1;
+            const productList = s.products.join(", ");
+            return `${rank}. ${s.name} — Reputation score: ${s.reputation}. ${s.productCount} product(s): ${productList}.`;
+          });
+
+          return `There are ${sellers.length} sellers on the platform, ranked by reputation:\n${lines.join("\n")}`;
+        } catch {
+          return "Sorry, something went wrong fetching seller information.";
+        }
+      },
       initiate_payment: async ({ product_id, payment_method }: { product_id: string; payment_method: "usdc" | "native" }) => {
         console.log(`${TAG} tool:initiate_payment product=${product_id} method=${payment_method}`);
         try {

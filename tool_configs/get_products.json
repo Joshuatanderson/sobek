@@ -1,6 +1,6 @@
 {
     "name": "get_products",
-    "description": "Fetches the list of available products and services from the Sobek marketplace. Call this when the user asks what products, services, or items are available, or wants to know what they can buy.",
+    "description": "Fetches the list of available products and services from the Sobek marketplace, including each seller's reputation score. Call this when the user asks what products, services, or items are available, wants to know what they can buy, or asks about seller reputation. Returns product details along with seller name and reputation score for each listing.",
     "type": "client",
     "expects_response": true,
     "response_timeout_secs": 10,

@@ -1,0 +1,15 @@
+{
+    "name": "get_sellers",
+    "description": "Fetches all sellers on the Sobek marketplace with their reputation scores and product counts. Call this when the user asks about seller reputation, wants to find the most reputable or trustworthy seller, or asks who the top sellers are. Returns each seller's name, wallet address, reputation score, and number of active products.",
+    "type": "client",
+    "expects_response": true,
+    "response_timeout_secs": 10,
+    "parameters": {
+        "type": "object",
+        "description": "Parameters for fetching sellers",
+        "properties": {}
+    },
+    "dynamic_variables": {
+        "dynamic_variable_placeholders": {}
+    }
+}
