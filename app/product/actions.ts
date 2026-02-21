@@ -81,7 +81,7 @@ export async function getProducts() {
   return { data, error: null };
 }
 
-export async function createOrder(
+export async function createTransaction(
   productId: string,
   txHash: string,
   walletAddress: string,
@@ -115,8 +115,8 @@ export async function createOrder(
   const durationSeconds = product.escrow_duration_seconds ?? 10;
   const usesEscrow = escrowRegistration != null && durationSeconds > 0;
 
-  // If escrow, create Hedera schedule BEFORE inserting the order.
-  // This prevents zombie orders stuck in 'pending_schedule' if Hedera fails.
+  // If escrow, create Hedera schedule BEFORE inserting the transaction.
+  // This prevents zombie transactions stuck in 'pending_schedule' if Hedera fails.
   let scheduleId: string | undefined;
   let releaseAt: Date | undefined;
 
@@ -134,8 +134,8 @@ export async function createOrder(
     }
   }
 
-  const { data: order, error: orderError } = await supabaseAdmin
-    .from("orders")
+  const { data: transaction, error: transactionError } = await supabaseAdmin
+    .from("transactions")
     .insert({
       product_id: productId,
       tx_hash: txHash,
@@ -151,66 +151,62 @@ export async function createOrder(
     .select()
     .single();
 
-  if (orderError) {
-    return { data: null, error: { message: orderError.message } };
+  if (transactionError) {
+    return { data: null, error: { message: transactionError.message } };
   }
-
-  // Fire-and-forget: register buyer as ERC-8004 agent
-  ensureAgent(supabaseAdmin, client.id, walletAddress as `0x${string}`)
-    .catch((err) => console.error("Non-fatal: buyer agent registration failed:", err));
 
   // Notify provider via Telegram
   if (product.agent_id) {
     await notifyUser(
       product.agent_id,
-      `New order for "${product.title}" (${paymentCurrency === "USDC" ? "$" : ""}${product.price_usdc} ${paymentCurrency}). Tx: ${txHash}`
+      `New transaction for "${product.title}" (${paymentCurrency === "USDC" ? "$" : ""}${product.price_usdc} ${paymentCurrency}). Tx: ${txHash}`
     );
   }
 
   revalidatePath("/product");
-  return { data: order, error: null };
+  return { data: transaction, error: null };
 }
 
-export async function initiateDispute(orderId: string, walletAddress: string) {
-  // Fetch order with buyer's wallet for verification
-  const { data: order, error: orderError } = await supabaseAdmin
-    .from("orders")
+export async function initiateDispute(transactionId: string, walletAddress: string) {
+  // Fetch transaction with buyer's wallet for verification
+  const { data: transaction, error: transactionError } = await supabaseAdmin
+    .from("transactions")
     .select("id, escrow_status, hedera_schedule_id, client_id, product_id, users:client_id(wallet_address)")
-    .eq("id", orderId)
+    .eq("id", transactionId)
     .single();
 
-  if (orderError || !order) {
-    return { error: { message: "Order not found" } };
+  if (transactionError || !transaction) {
+    return { error: { message: "Transaction not found" } };
   }
 
   // Verify caller is the buyer
-  const buyerWallet = (order.users as { wallet_address: string } | null)?.wallet_address;
+  const buyerWallet = (transaction.users as { wallet_address: string } | null)?.wallet_address;
   if (!buyerWallet || buyerWallet.toLowerCase() !== walletAddress.toLowerCase()) {
-    return { error: { message: "Not authorized to dispute this order" } };
+    return { error: { message: "Not authorized to dispute this transaction" } };
   }
 
   // Atomically claim the dispute — only if still active (prevents race with cron release)
   const { data: claimed, error: claimError } = await supabaseAdmin
-    .from("orders")
+    .from("transactions")
     .update({
       escrow_status: "disputed",
       dispute_initiated_at: new Date().toISOString(),
       dispute_initiated_by: walletAddress,
     })
-    .eq("id", orderId)
+    .eq("id", transactionId)
     .eq("escrow_status", "active")
     .select("id")
     .single();
 
   if (claimError || !claimed) {
-    return { error: { message: "Order is not in active escrow (may already be released or disputed)" } };
+    return { error: { message: "Transaction is not in active escrow (may already be released or disputed)" } };
   }
 
   // Cancel the Hedera schedule — best-effort (schedule may have already executed,
   // but we already atomically set status to 'disputed' above so the cron won't release)
-  if (order.hedera_schedule_id) {
+  if (transaction.hedera_schedule_id) {
     try {
-      await cancelEscrowSchedule(order.hedera_schedule_id);
+      await cancelEscrowSchedule(transaction.hedera_schedule_id);
     } catch (err) {
       // Schedule may have already executed or been deleted — that's fine,
       // the DB status is already 'disputed' which blocks the cron from releasing
@@ -222,13 +218,13 @@ export async function initiateDispute(orderId: string, walletAddress: string) {
   const { data: product } = await supabaseAdmin
     .from("products")
     .select("agent_id, title")
-    .eq("id", order.product_id!)
+    .eq("id", transaction.product_id!)
     .single();
 
   if (product?.agent_id) {
     await notifyUser(
       product.agent_id,
-      `Dispute initiated on order for "${product.title}" by ${walletAddress}`
+      `Dispute initiated on transaction for "${product.title}" by ${walletAddress}`
     );
   }
 
