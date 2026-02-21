@@ -206,6 +206,86 @@ describe("SobekEscrow", function () {
     ).to.be.revertedWithCustomError(sobekEscrow, "AlreadyReleased");
   });
 
+  it("release reverts on double-spend", async function () {
+    const [deployer, winner, loser] = await hre.ethers.getSigners();
+
+    const sobekEscrow = await hre.ethers.deployContract("SobekEscrow", [
+      deployer.address,
+      deployer.address,
+      FEE_BPS,
+    ]);
+    await sobekEscrow.waitForDeployment();
+
+    const depositAmount = hre.ethers.parseEther("1.0");
+
+    // Loser deposits with receiver = winner
+    await sobekEscrow.connect(loser).deposit(
+      winner.address,
+      hre.ethers.ZeroAddress,
+      depositAmount,
+      "loser side",
+      { value: depositAmount }
+    );
+    const loserReg = await sobekEscrow.escrowCount();
+
+    // Winner deposits with receiver = winner (self)
+    await sobekEscrow.connect(winner).deposit(
+      winner.address,
+      hre.ethers.ZeroAddress,
+      depositAmount,
+      "winner side",
+      { value: depositAmount }
+    );
+    const winnerReg = await sobekEscrow.escrowCount();
+
+    // First release succeeds
+    await sobekEscrow.release([loserReg], winnerReg);
+
+    // Second release on same registrations should revert
+    await expect(
+      sobekEscrow.release([loserReg], winnerReg)
+    ).to.be.revertedWithCustomError(sobekEscrow, "AlreadyReleased");
+  });
+
+  it("release zeros out escrow values after release", async function () {
+    const [deployer, winner, loser] = await hre.ethers.getSigners();
+
+    const sobekEscrow = await hre.ethers.deployContract("SobekEscrow", [
+      deployer.address,
+      deployer.address,
+      FEE_BPS,
+    ]);
+    await sobekEscrow.waitForDeployment();
+
+    const depositAmount = hre.ethers.parseEther("1.0");
+
+    await sobekEscrow.connect(loser).deposit(
+      winner.address,
+      hre.ethers.ZeroAddress,
+      depositAmount,
+      "loser side",
+      { value: depositAmount }
+    );
+    const loserReg = await sobekEscrow.escrowCount();
+
+    await sobekEscrow.connect(winner).deposit(
+      winner.address,
+      hre.ethers.ZeroAddress,
+      depositAmount,
+      "winner side",
+      { value: depositAmount }
+    );
+    const winnerReg = await sobekEscrow.escrowCount();
+
+    await sobekEscrow.release([loserReg], winnerReg);
+
+    // Both escrow values should be zeroed out
+    const loserEscrow = await sobekEscrow.escrows(loserReg);
+    const winnerEscrow = await sobekEscrow.escrows(winnerReg);
+    expect(loserEscrow.value).to.equal(0n);
+    expect(winnerEscrow.value).to.equal(0n);
+  });
+
   it("releaseToReceiver reverts for non-arbiter", async function () {
     const [deployer, nonArbiter, receiver] = await hre.ethers.getSigners();
 
@@ -229,6 +309,115 @@ describe("SobekEscrow", function () {
 
     await expect(
       sobekEscrow.connect(nonArbiter).releaseToReceiver(registration)
+    ).to.be.reverted;
+  });
+
+  it("refundDepositor sends full ETH back to depositor", async function () {
+    const [deployer, depositor, receiver] = await hre.ethers.getSigners();
+
+    const sobekEscrow = await hre.ethers.deployContract("SobekEscrow", [
+      deployer.address,
+      deployer.address,
+      FEE_BPS,
+    ]);
+    await sobekEscrow.waitForDeployment();
+
+    const depositAmount = hre.ethers.parseEther("1.0");
+    await sobekEscrow.connect(depositor).deposit(
+      receiver.address,
+      hre.ethers.ZeroAddress,
+      depositAmount,
+      "refund test",
+      { value: depositAmount }
+    );
+
+    const registration = await sobekEscrow.escrowCount();
+    const depositorBefore = await hre.ethers.provider.getBalance(depositor.address);
+
+    await sobekEscrow.refundDepositor(registration);
+
+    const depositorAfter = await hre.ethers.provider.getBalance(depositor.address);
+    // Full amount refunded (no fee)
+    expect(depositorAfter - depositorBefore).to.equal(depositAmount);
+  });
+
+  it("refundDepositor emits RefundDepositor event", async function () {
+    const [deployer, depositor, receiver] = await hre.ethers.getSigners();
+
+    const sobekEscrow = await hre.ethers.deployContract("SobekEscrow", [
+      deployer.address,
+      deployer.address,
+      FEE_BPS,
+    ]);
+    await sobekEscrow.waitForDeployment();
+
+    const depositAmount = hre.ethers.parseEther("1.0");
+    await sobekEscrow.connect(depositor).deposit(
+      receiver.address,
+      hre.ethers.ZeroAddress,
+      depositAmount,
+      "event test",
+      { value: depositAmount }
+    );
+
+    const registration = await sobekEscrow.escrowCount();
+
+    await expect(sobekEscrow.refundDepositor(registration))
+      .to.emit(sobekEscrow, "RefundDepositor")
+      .withArgs(registration);
+  });
+
+  it("refundDepositor reverts on double-spend", async function () {
+    const [deployer, depositor, receiver] = await hre.ethers.getSigners();
+
+    const sobekEscrow = await hre.ethers.deployContract("SobekEscrow", [
+      deployer.address,
+      deployer.address,
+      FEE_BPS,
+    ]);
+    await sobekEscrow.waitForDeployment();
+
+    const depositAmount = hre.ethers.parseEther("1.0");
+    await sobekEscrow.connect(depositor).deposit(
+      receiver.address,
+      hre.ethers.ZeroAddress,
+      depositAmount,
+      "double-spend test",
+      { value: depositAmount }
+    );
+
+    const registration = await sobekEscrow.escrowCount();
+
+    await sobekEscrow.refundDepositor(registration);
+
+    await expect(
+      sobekEscrow.refundDepositor(registration)
+    ).to.be.revertedWithCustomError(sobekEscrow, "AlreadyReleased");
+  });
+
+  it("refundDepositor reverts for non-arbiter", async function () {
+    const [deployer, nonArbiter, receiver] = await hre.ethers.getSigners();
+
+    const sobekEscrow = await hre.ethers.deployContract("SobekEscrow", [
+      deployer.address,
+      deployer.address,
+      FEE_BPS,
+    ]);
+    await sobekEscrow.waitForDeployment();
+
+    const depositAmount = hre.ethers.parseEther("0.5");
+    await sobekEscrow.deposit(
+      receiver.address,
+      hre.ethers.ZeroAddress,
+      depositAmount,
+      "auth test",
+      { value: depositAmount }
+    );
+
+    const registration = await sobekEscrow.escrowCount();
+
+    await expect(
+      sobekEscrow.connect(nonArbiter).refundDepositor(registration)
     ).to.be.reverted;
   });
 });

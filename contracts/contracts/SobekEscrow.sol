@@ -110,6 +110,13 @@ contract SobekEscrow is AccessControl {
     event FeeTaken(address indexed platform, uint256 amount, uint256 indexed registration);
 
     /**
+     * @dev Event that is emitted when escrowed funds are refunded
+     * back to the original depositor (e.g. dispute resolution).
+     * @param registration The registration index of the escrow.
+     */
+    event RefundDepositor(uint256 indexed registration);
+
+    /**
      * @dev You can cut out 10 opcodes in the creation-time EVM bytecode
      * if you declare a constructor `payable`.
      *
@@ -181,6 +188,10 @@ contract SobekEscrow is AccessControl {
          */
         for (uint256 i; i < length; ++i) {
             Escrow storage escrow = escrows[registration[i]];
+
+            uint256 amount = escrow.value;
+            if (amount == 0) revert AlreadyReleased();
+
             /**
              * @dev Requires that the receiver address is equal
              * to the deposit address of the winner.
@@ -188,28 +199,35 @@ contract SobekEscrow is AccessControl {
             if (escrow.receiver != escrowRevert.depositor)
                 revert AddressMismatch(escrow.receiver, escrowRevert.depositor);
 
+            // Zero out before external call (CEI pattern — prevents double-spend)
+            escrow.value = 0;
+
             if (address(escrow.token) == address(0)) {
                 /// @dev Distributes the ether value to the winner address.
                 // solhint-disable-next-line avoid-low-level-calls
-                (bool success, ) = escrow.receiver.call{value: escrow.value}("");
+                (bool success, ) = escrow.receiver.call{value: amount}("");
                 if (!success) revert EtherTransferFail();
             } else {
                 /// @dev Safely distributes the ERC-20 token to the winner address.
-                escrow.token.safeTransfer(escrow.receiver, escrow.value);
+                escrow.token.safeTransfer(escrow.receiver, amount);
             }
 
             emit Release(registration[i]);
         }
 
         /// @dev Refunds the original winner stake.
+        uint256 refundAmount = escrowRevert.value;
+        if (refundAmount == 0) revert AlreadyReleased();
+        escrowRevert.value = 0;
+
         if (address(escrowRevert.token) == address(0)) {
             /// @dev Refunds the ether value to the winner address.
             // solhint-disable-next-line avoid-low-level-calls
-            (bool success, ) = escrowRevert.depositor.call{value: escrowRevert.value}("");
+            (bool success, ) = escrowRevert.depositor.call{value: refundAmount}("");
             if (!success) revert EtherTransferFail();
         } else {
             /// @dev Safely refunds the ERC-20 token to the winner address.
-            escrowRevert.token.safeTransfer(escrowRevert.depositor, escrowRevert.value);
+            escrowRevert.token.safeTransfer(escrowRevert.depositor, refundAmount);
         }
 
         emit WinnerRefund(winnerRefundRegistration);
@@ -247,5 +265,28 @@ contract SobekEscrow is AccessControl {
 
         emit FeeTaken(platformWallet, fee, registration);
         emit ReleaseToReceiver(registration);
+    }
+
+    /**
+     * @notice Refunds escrowed funds back to the original depositor.
+     * @dev Used for dispute resolution. No platform fee on refunds.
+     * @param registration The registration index of the escrow deposit.
+     */
+    function refundDepositor(uint256 registration) public payable onlyRole(ARBITER) {
+        Escrow storage escrow = escrows[registration];
+        uint256 amount = escrow.value;
+        if (amount == 0) revert AlreadyReleased();
+
+        // Zero out before external call (CEI pattern)
+        escrow.value = 0;
+
+        if (address(escrow.token) == address(0)) {
+            (bool success, ) = escrow.depositor.call{value: amount}("");
+            if (!success) revert EtherTransferFail();
+        } else {
+            escrow.token.safeTransfer(escrow.depositor, amount);
+        }
+
+        emit RefundDepositor(registration);
     }
 }
