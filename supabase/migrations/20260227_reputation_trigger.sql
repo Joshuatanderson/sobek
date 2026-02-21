@@ -15,7 +15,7 @@ DECLARE
   success_rate numeric;
   m_rate numeric;
   score numeric;
-  seller_user_id text;
+  seller_user_id uuid;
 BEGIN
   affected_wallet := COALESCE(NEW.wallet, OLD.wallet);
 
@@ -94,7 +94,7 @@ DECLARE
   success_rate numeric;
   m_rate numeric;
   score numeric;
-  seller_user_id text;
+  seller_user_id uuid;
 BEGIN
   FOR w IN SELECT DISTINCT wallet FROM reputation_events LOOP
     -- Aggregate from positive reputation events
