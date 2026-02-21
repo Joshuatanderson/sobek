@@ -82,32 +82,92 @@ export default function Home() {
 
         {/* Chalk arrow annotation */}
         {voice.status === "disconnected" && (
-          <div className="absolute -right-36 sm:-right-44 top-0 animate-pulse-subtle pointer-events-none select-none">
-            <p className="text-sobek-green-light/80 text-lg italic -rotate-6 whitespace-nowrap chalk-text">
-              click to start
-            </p>
+          <div className="absolute -right-40 sm:-right-48 -top-2 animate-pulse-subtle pointer-events-none select-none">
             <svg
-              width="100"
-              height="80"
-              viewBox="0 0 100 80"
+              width="160"
+              height="120"
+              viewBox="0 0 160 120"
               fill="none"
-              className="ml-2 -mt-1"
+              className="overflow-visible"
             >
-              <path
-                d="M80 8 C60 10, 40 30, 20 55 Q12 65, 8 72"
-                stroke="rgba(205, 223, 197, 0.7)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeDasharray="4 3"
-                fill="none"
-              />
-              {/* Arrowhead */}
-              <path
-                d="M8 72 L14 62 M8 72 L18 70"
-                stroke="rgba(205, 223, 197, 0.7)"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
+              {/* Chalk texture filter */}
+              <defs>
+                <filter id="chalk" x="-5%" y="-5%" width="110%" height="110%">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" result="noise" />
+                  <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G" />
+                </filter>
+              </defs>
+
+              {/* "click to start" text — tilted, chalk-style */}
+              <text
+                x="100"
+                y="22"
+                textAnchor="middle"
+                fontFamily="inherit"
+                fontSize="18"
+                fontStyle="italic"
+                fill="rgba(205, 223, 197, 0.85)"
+                transform="rotate(-8, 100, 22)"
+                filter="url(#chalk)"
+              >
+                click to start
+              </text>
+
+              {/*
+                Curved arrow — 90° gradual turn: down then left
+                Cubic bezier: P0=(80,35) P1=(80,65) P2=(40,98) P3=(18,98)
+                Tangent at start: P1-P0 = (0, 30)   → vertical (down)
+                Tangent at end:   P3-P2 = (-22, 0)  → horizontal (left)
+              */}
+              <g filter="url(#chalk)">
+                {/* Base stroke */}
+                <path
+                  d="M80 35 C80 65, 40 98, 18 98"
+                  stroke="rgba(205, 223, 197, 0.5)"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                {/* Offset stroke 1 — +1px for chalk grain */}
+                <path
+                  d="M81 36 C81 66, 41 99, 19 99"
+                  stroke="rgba(205, 223, 197, 0.35)"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                {/* Offset stroke 2 — -1px other direction */}
+                <path
+                  d="M79 34 C79 64, 39 97, 17 97"
+                  stroke="rgba(205, 223, 197, 0.3)"
+                  strokeWidth="1"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </g>
+
+              {/*
+                Arrowhead at tip (18, 98). Arrow ends going left.
+                Each arm 45° from horizontal, 14px long (10px on each axis).
+                Arm 1: up-right   → (18+10, 98-10) = (28, 88)
+                Arm 2: down-right → (18+10, 98+10) = (28, 108)
+              */}
+              <g filter="url(#chalk)">
+                <path
+                  d="M18 98 L28 88"
+                  stroke="rgba(205, 223, 197, 0.8)"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                <path
+                  d="M18 98 L28 108"
+                  stroke="rgba(205, 223, 197, 0.8)"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </g>
             </svg>
           </div>
         )}

@@ -129,6 +129,10 @@
 .animate-pulse-subtle {
   animation: pulse-subtle 2.5s ease-in-out infinite;
 }
+.chalk-text {
+  text-shadow: 0 0 8px rgba(205, 223, 197, 0.3);
+  letter-spacing: 0.05em;
+}
 
 
 :root {
