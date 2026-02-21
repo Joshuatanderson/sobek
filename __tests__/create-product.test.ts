@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockInsert = vi.fn();
 const mockGetUser = vi.fn();
+const mockAdminUpdate = vi.fn();
 
 vi.mock("@/utils/supabase/server", () => ({
   createClient: () =>
@@ -15,7 +16,14 @@ vi.mock("@/utils/supabase/server", () => ({
 }));
 
 vi.mock("@/utils/supabase/admin", () => ({
-  supabaseAdmin: {},
+  supabaseAdmin: {
+    from: () => ({
+      update: (data: unknown) => {
+        mockAdminUpdate(data);
+        return { eq: () => Promise.resolve({ error: null }) };
+      },
+    }),
+  },
 }));
 
 vi.mock("@/utils/telegram", () => ({
@@ -26,11 +34,7 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
-vi.mock("@/lib/erc8004", () => ({
-  ensureAgent: vi.fn().mockResolvedValue(undefined),
-}));
-
-import { createProduct } from "@/app/product/actions";
+import { createProduct, storeAgentId } from "@/app/product/actions";
 
 function formData(fields: Record<string, string>): FormData {
   const fd = new FormData();
@@ -47,6 +51,7 @@ beforeEach(() => {
   mockInsert.mockReturnValue({
     select: () => Promise.resolve({ data: [{ id: "product-1" }], error: null }),
   });
+  mockAdminUpdate.mockClear();
 });
 
 describe("createProduct", () => {
@@ -107,5 +112,22 @@ describe("createProduct", () => {
       formData({ title: "X", description: "Y", price_usdc: "0" })
     );
     expect(result.error?.message).toBe("Price must be greater than zero");
+  });
+});
+
+describe("storeAgentId", () => {
+  it("rejects unauthenticated users", async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
+
+    const result = await storeAgentId(42);
+    expect(result.error?.message).toBe("Not authenticated");
+    expect(mockAdminUpdate).not.toHaveBeenCalled();
+  });
+
+  it("stores agent ID for authenticated user", async () => {
+    const result = await storeAgentId(42);
+
+    expect(result.error).toBeNull();
+    expect(mockAdminUpdate).toHaveBeenCalledWith({ erc8004_agent_id: 42 });
   });
 });

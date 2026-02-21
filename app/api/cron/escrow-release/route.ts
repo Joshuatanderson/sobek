@@ -7,7 +7,7 @@ import {
   getSellerMrate,
 } from "@/lib/reputation";
 import { logTierTransition } from "@/lib/hedera-hcs";
-import { registerAgent, giveFeedback } from "@/lib/erc8004";
+import { giveFeedback } from "@/lib/erc8004";
 
 export const dynamic = "force-dynamic";
 
@@ -160,30 +160,22 @@ export async function GET(request: Request) {
 
       // --- ERC-8004 on-chain reputation (best-effort) ---
       if (sellerUser && product?.price_usdc) {
-        try {
-          let agentId: bigint;
-
-          if (sellerUser.erc8004_agent_id != null) {
-            agentId = BigInt(sellerUser.erc8004_agent_id);
-          } else {
-            // Lazy-register seller on first completed escrow
-            agentId = await registerAgent(
-              sellerUser.wallet_address as `0x${string}`
-            );
-            await supabaseAdmin
-              .from("users")
-              .update({ erc8004_agent_id: Number(agentId) })
-              .eq("id", sellerUser.id);
-          }
-
-          const delta = calculateSuccessSeller(product.price_usdc);
-          await giveFeedback(agentId, delta, "escrow-release");
-        } catch (erc8004Err) {
-          // ERC-8004 must never block escrow release
-          console.error(
-            `Non-fatal: ERC-8004 feedback failed for transaction ${transaction.id}:`,
-            erc8004Err
+        if (sellerUser.erc8004_agent_id == null) {
+          console.warn(
+            `Seller ${sellerUser.id} has no erc8004_agent_id — skipping ERC-8004 feedback for transaction ${transaction.id}`
           );
+        } else {
+          try {
+            const agentId = BigInt(sellerUser.erc8004_agent_id);
+            const delta = calculateSuccessSeller(product.price_usdc);
+            await giveFeedback(agentId, delta, "escrow-release");
+          } catch (erc8004Err) {
+            // ERC-8004 must never block escrow release
+            console.error(
+              `Non-fatal: ERC-8004 feedback failed for transaction ${transaction.id}:`,
+              erc8004Err
+            );
+          }
         }
       }
 

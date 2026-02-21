@@ -6,7 +6,30 @@ import { notifyUser } from "@/utils/telegram";
 import { revalidatePath } from "next/cache";
 import { createEscrowSchedule } from "@/lib/hedera-schedule";
 import { cancelEscrowSchedule } from "@/lib/hedera-dispute";
-import { ensureAgent } from "@/lib/erc8004";
+
+export async function storeAgentId(agentId: number) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { error: { message: "Not authenticated" } };
+  }
+
+  const { error } = await supabaseAdmin
+    .from("users")
+    .update({ erc8004_agent_id: agentId })
+    .eq("id", user.id);
+
+  if (error) {
+    return { error: { message: error.message } };
+  }
+
+  return { error: null };
+}
 
 export async function createProduct(prevState: unknown, formData: FormData) {
   const supabase = await createClient();
@@ -49,18 +72,6 @@ export async function createProduct(prevState: unknown, formData: FormData) {
 
   if (result.error?.code === "23503") {
     return { data: null, error: { message: "User profile not found. Please reconnect your wallet." } };
-  }
-
-  // Fire-and-forget: register seller as ERC-8004 agent
-  const { data: sellerProfile } = await supabase
-    .from("users")
-    .select("wallet_address")
-    .eq("id", user.id)
-    .single();
-
-  if (sellerProfile?.wallet_address) {
-    ensureAgent(supabaseAdmin, user.id, sellerProfile.wallet_address as `0x${string}`)
-      .catch((err) => console.error("Non-fatal: seller agent registration failed:", err));
   }
 
   return { data: result.data, error: result.error };
