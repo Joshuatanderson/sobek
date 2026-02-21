@@ -100,11 +100,13 @@ async function ProductsTable() {
                       productId={product.id}
                       priceUsdc={product.price_usdc}
                       recipientAddress={product.users.wallet_address as `0x${string}`}
+                      productTitle={product.title}
                     />
                     <BuyNativeButton
                       productId={product.id}
                       price={product.price_usdc}
                       recipientAddress={product.users.wallet_address as `0x${string}`}
+                      productTitle={product.title}
                     />
                   </div>
                 )}

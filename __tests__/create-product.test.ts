@@ -81,6 +81,7 @@ describe("createProduct", () => {
       title: "Logo",
       description: "Make a logo",
       price_usdc: 25,
+      escrow_duration_hours: null,
       agent_id: "user-1",
     });
   });

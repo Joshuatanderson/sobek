@@ -23,6 +23,8 @@ export async function createProduct(prevState: unknown, formData: FormData) {
   const description = formData.get("description") as string;
   const priceRaw = formData.get("price_usdc") as string;
   const price_usdc = parseFloat(priceRaw);
+  const escrowRaw = formData.get("escrow_duration_hours") as string | null;
+  const escrow_duration_hours = escrowRaw ? parseInt(escrowRaw, 10) : null;
 
   if (!title || !description || isNaN(price_usdc)) {
     return { data: null, error: { message: "Missing required fields" } };
@@ -32,10 +34,15 @@ export async function createProduct(prevState: unknown, formData: FormData) {
     return { data: null, error: { message: "Price must be greater than zero" } };
   }
 
+  if (escrow_duration_hours !== null && (isNaN(escrow_duration_hours) || escrow_duration_hours < 1)) {
+    return { data: null, error: { message: "Escrow duration must be at least 1 hour" } };
+  }
+
   const result = await supabase.from("products").insert({
     title,
     description,
     price_usdc,
+    escrow_duration_hours,
     agent_id: user.id,
   }).select();
 
@@ -66,7 +73,8 @@ export async function createOrder(
   txHash: string,
   walletAddress: string,
   paymentCurrency: string = "USDC",
-  escrowRegistration?: number
+  escrowRegistration?: number,
+  chainId: number = 8453
 ) {
   // Look up product to get provider's agent_id and escrow config
   const { data: product, error: productError } = await supabaseAdmin
@@ -94,7 +102,25 @@ export async function createOrder(
   const durationHours = product.escrow_duration_hours;
   const usesEscrow = escrowRegistration != null && durationHours != null && durationHours > 0;
 
-  // Insert order — escrow orders start as 'pending_schedule' until Hedera timer is confirmed
+  // If escrow, create Hedera schedule BEFORE inserting the order.
+  // This prevents zombie orders stuck in 'pending_schedule' if Hedera fails.
+  let scheduleId: string | undefined;
+  let releaseAt: Date | undefined;
+
+  if (usesEscrow) {
+    try {
+      const schedule = await createEscrowSchedule(productId, durationHours);
+      scheduleId = schedule.scheduleId;
+      releaseAt = schedule.releaseAt;
+    } catch (err) {
+      console.error("Failed to create Hedera escrow schedule:", err);
+      return {
+        data: null,
+        error: { message: "Failed to set up escrow timer. Funds are safe in the escrow contract — please try again or contact support." },
+      };
+    }
+  }
+
   const { data: order, error: orderError } = await supabaseAdmin
     .from("orders")
     .insert({
@@ -104,35 +130,16 @@ export async function createOrder(
       paid_at: new Date().toISOString(),
       client_id: client.id,
       escrow_registration: escrowRegistration ?? null,
-      escrow_status: usesEscrow ? "pending_schedule" : "none",
+      escrow_status: usesEscrow ? "active" : "none",
+      chain_id: chainId,
+      hedera_schedule_id: scheduleId ?? null,
+      release_at: releaseAt?.toISOString() ?? null,
     })
     .select()
     .single();
 
   if (orderError) {
     return { data: null, error: { message: orderError.message } };
-  }
-
-  // If payment went through escrow, create Hedera timer for auto-release
-  if (usesEscrow) {
-    try {
-      const { scheduleId, releaseAt } = await createEscrowSchedule(
-        order.id,
-        durationHours
-      );
-      await supabaseAdmin
-        .from("orders")
-        .update({
-          hedera_schedule_id: scheduleId,
-          release_at: releaseAt.toISOString(),
-          escrow_status: "active",
-        })
-        .eq("id", order.id);
-    } catch (err) {
-      // Hedera failed — order stays as 'pending_schedule' which the cron ignores.
-      // This needs manual resolution or a retry mechanism.
-      console.error("Failed to create Hedera escrow schedule:", err);
-    }
   }
 
   // Notify provider via Telegram

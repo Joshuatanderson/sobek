@@ -56,6 +56,21 @@ export function CreateProductForm() {
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="escrow_duration_hours">Escrow Duration (hours)</Label>
+            <Input
+              id="escrow_duration_hours"
+              name="escrow_duration_hours"
+              type="number"
+              step="1"
+              min="1"
+              placeholder="72"
+            />
+            <p className="text-xs text-sobek-green-light/50">
+              How long funds are held in escrow before auto-releasing to you. Leave blank for instant payment (no escrow).
+            </p>
+          </div>
+
           <Button type="submit" disabled={isPending} size="lg" className="w-full">
             {isPending ? "Creating..." : "Create Product"}
           </Button>
