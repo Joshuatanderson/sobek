@@ -3,8 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   turbopack: {
     resolveAlias: {
-      "pino-pretty": { browser: "./noop.js" },
-      encoding: { browser: "./noop.js" },
+      pino: "./lib/empty-module.js",
+      "pino-pretty": "./lib/empty-module.js",
+      "thread-stream": "./lib/empty-module.js",
+      encoding: "./lib/empty-module.js",
     },
   },
   serverExternalPackages: ["pino", "pino-pretty", "thread-stream"],
