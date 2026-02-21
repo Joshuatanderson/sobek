@@ -65,8 +65,8 @@ async function main() {
   console.log("  registration:", green(String(registration)));
   console.log(`  BaseScan: ${dim(`https://sepolia.basescan.org/tx/${receipt!.hash}`)}`);
 
-  // ── Step 2: Create order in Supabase ────────────────────────────────────
-  console.log("\n[2/3] Creating order in Supabase...");
+  // ── Step 2: Create transaction in Supabase ────────────────────────────────────
+  console.log("\n[2/3] Creating transaction in Supabase...");
 
   // Upsert the wallet as a user (accountless payer flow)
   const { data: client, error: clientError } = await supabase
@@ -79,9 +79,9 @@ async function main() {
     throw new Error(`Failed to resolve client: ${clientError?.message}`);
   }
 
-  // Insert order with escrow fields
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
+  // Insert transaction with escrow fields
+  const { data: transaction, error: transactionError } = await supabase
+    .from("transactions")
     .insert({
       product_id: PRODUCT_ID,
       tx_hash: receipt!.hash,
@@ -89,17 +89,18 @@ async function main() {
       paid_at: new Date().toISOString(),
       client_id: client.id,
       escrow_registration: registration,
+      chain_id: 84532, // Base Sepolia
       escrow_status: "active", // skipping Hedera schedule for Sepolia test
       release_at: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(), // 1h from now
     })
     .select()
     .single();
 
-  if (orderError) throw new Error(`Order insert failed: ${orderError.message}`);
+  if (transactionError) throw new Error(`Transaction insert failed: ${transactionError.message}`);
 
-  console.log("  order ID:", green(order.id));
-  console.log("  escrow_status:", order.escrow_status);
-  console.log("  release_at:", order.release_at);
+  console.log("  transaction ID:", green(transaction.id));
+  console.log("  escrow_status:", transaction.escrow_status);
+  console.log("  release_at:", transaction.release_at);
 
   // ── Step 3: Verify on-chain state ───────────────────────────────────────
   console.log("\n[3/3] Verifying on-chain escrow state...");
@@ -118,7 +119,7 @@ async function main() {
   console.log("═".repeat(60));
   console.log(`  Contract:     ${ESCROW_ADDRESS}`);
   console.log(`  Registration: ${registration}`);
-  console.log(`  Order:        ${order.id}`);
+  console.log(`  Transaction:  ${transaction.id}`);
   console.log(`  Tx:           https://sepolia.basescan.org/tx/${receipt!.hash}`);
   console.log("");
   console.log("  To release manually:");

@@ -13,7 +13,7 @@ export interface ReputationInput {
   maxDeal: number;
   avgDeal: number;
   mrate: number;
-  orderCount: number;
+  transactionCount: number;
 }
 
 // --- Pure math (no DB) ---
@@ -35,7 +35,7 @@ export const powerLaw =
     return Math.round(Math.pow(amount, 0.3) * multiplier);
   };
 
-/** +rep for seller on successful order release */
+/** +rep for seller on successful transaction release */
 export const calculateSuccessSeller = powerLaw(3);
 
 /** -rep for seller when buyer wins dispute */
@@ -62,21 +62,21 @@ export function computeReputation({
   maxDeal,
   avgDeal,
   mrate,
-  orderCount,
+  transactionCount,
 }: ReputationInput): number {
-  if (orderCount === 0 || maxDeal <= 0 || avgDeal <= 0) return 0;
+  if (transactionCount === 0 || maxDeal <= 0 || avgDeal <= 0) return 0;
   return Math.round(
     Math.pow(maxDeal, 0.15) *
       Math.pow(avgDeal, 0.15) *
       mrate *
-      Math.log10(1 + orderCount) *
+      Math.log10(1 + transactionCount) *
       10
   );
 }
 
 // --- DB-aware (async) ---
 
-/** Query orders to compute seller's Mrate from success rate */
+/** Query transactions to compute seller's Mrate from success rate */
 export async function getSellerMrate(
   supabase: SupabaseClient,
   wallet: string
@@ -100,17 +100,17 @@ export async function getSellerMrate(
 
   const productIds = products.map((p) => p.id);
 
-  // Count released and refunded orders for these products
-  const { data: orders } = await supabase
-    .from("orders")
+  // Count released and refunded transactions for these products
+  const { data: transactions } = await supabase
+    .from("transactions")
     .select("escrow_status")
     .in("product_id", productIds)
     .in("escrow_status", ["released", "refunded"]);
 
-  if (!orders || orders.length === 0) return { tier: "Sovereign", mrate: 1.1 };
+  if (!transactions || transactions.length === 0) return { tier: "Sovereign", mrate: 1.1 };
 
-  const released = orders.filter((o) => o.escrow_status === "released").length;
-  const rate = released / orders.length;
+  const released = transactions.filter((t) => t.escrow_status === "released").length;
+  const rate = released / transactions.length;
 
   return getMrateFromSuccessRate(rate);
 }

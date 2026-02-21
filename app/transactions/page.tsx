@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-type OrderRow = {
+type TransactionRow = {
   id: string;
   status: string;
   escrow_status: string | null;
@@ -60,7 +60,7 @@ function statusBadge(escrowStatus: string | null) {
   );
 }
 
-function OrdersTableSkeleton() {
+function TransactionsTableSkeleton() {
   return (
     <div className="rounded-lg border border-sobek-forest/30 overflow-hidden">
       <Table>
@@ -91,24 +91,24 @@ function OrdersTableSkeleton() {
   );
 }
 
-async function OrdersTable() {
+async function TransactionsTable() {
   const supabase = await createClient();
 
-  const { data: orders, error } = await supabase
-    .from("orders")
+  const { data: transactions, error } = await supabase
+    .from("transactions")
     .select("id, status, escrow_status, tx_hash, created_at, paid_at, release_at, escrow_registration, product_id, client_id")
     .order("created_at", { ascending: false });
 
   if (error) {
-    return <p className="text-red-400">Failed to load orders: {error.message}</p>;
+    return <p className="text-red-400">Failed to load transactions: {error.message}</p>;
   }
 
-  if (!orders || orders.length === 0) {
-    return <p className="text-sobek-green-light/80">No orders yet.</p>;
+  if (!transactions || transactions.length === 0) {
+    return <p className="text-sobek-green-light/80">No transactions yet.</p>;
   }
 
-  const productIds = [...new Set(orders.map((o) => o.product_id).filter(Boolean))] as string[];
-  const clientIds = [...new Set(orders.map((o) => o.client_id).filter(Boolean))] as string[];
+  const productIds = [...new Set(transactions.map((t) => t.product_id).filter(Boolean))] as string[];
+  const clientIds = [...new Set(transactions.map((t) => t.client_id).filter(Boolean))] as string[];
 
   const [productsRes, usersRes] = await Promise.all([
     productIds.length > 0
@@ -136,11 +136,11 @@ async function OrdersTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {(orders as OrderRow[]).map((order) => {
-            const product = order.product_id ? productsMap.get(order.product_id) : null;
-            const buyer = order.client_id ? usersMap.get(order.client_id) : null;
+          {(transactions as TransactionRow[]).map((transaction) => {
+            const product = transaction.product_id ? productsMap.get(transaction.product_id) : null;
+            const buyer = transaction.client_id ? usersMap.get(transaction.client_id) : null;
             return (
-              <TableRow key={order.id} className="border-sobek-forest/30 hover:bg-sobek-forest/20">
+              <TableRow key={transaction.id} className="border-sobek-forest/30 hover:bg-sobek-forest/20">
                 <TableCell className="font-medium text-sobek-green-light">
                   {product?.title ?? "Unknown"}
                 </TableCell>
@@ -153,12 +153,12 @@ async function OrdersTable() {
                       ? truncateHash(buyer.wallet_address)
                       : "Unknown")}
                 </TableCell>
-                <TableCell>{statusBadge(order.escrow_status)}</TableCell>
+                <TableCell>{statusBadge(transaction.escrow_status)}</TableCell>
                 <TableCell className="text-sobek-green-light/70 font-mono text-xs">
-                  {order.tx_hash ? truncateHash(order.tx_hash) : "\u2014"}
+                  {transaction.tx_hash ? truncateHash(transaction.tx_hash) : "\u2014"}
                 </TableCell>
                 <TableCell className="text-sobek-green-light/70 text-xs">
-                  {formatDate(order.created_at)}
+                  {formatDate(transaction.created_at)}
                 </TableCell>
               </TableRow>
             );
@@ -169,21 +169,21 @@ async function OrdersTable() {
   );
 }
 
-export default function OrdersPage() {
+export default function TransactionsPage() {
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#0a0f0a] text-white font-sans">
       <Header />
 
       <div className="w-full max-w-6xl mt-8 space-y-4 px-4 sm:px-8 pb-8">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-sobek-gold">Orders</h1>
+          <h1 className="text-3xl font-bold text-sobek-gold">Transactions</h1>
           <p className="text-sobek-green-light/80">
-            All orders placed through Sobek.
+            All transactions placed through Sobek.
           </p>
         </div>
 
-        <Suspense fallback={<OrdersTableSkeleton />}>
-          <OrdersTable />
+        <Suspense fallback={<TransactionsTableSkeleton />}>
+          <TransactionsTable />
         </Suspense>
       </div>
     </div>

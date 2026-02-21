@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/utils/supabase/admin";
-import { releaseEscrowOnBase } from "@/lib/base-escrow";
+import { releaseEscrow } from "@/lib/base-escrow";
 import { HEDERA_MIRROR_URL } from "@/lib/hedera";
+import {
+  calculateSuccessSeller,
+  getSellerMrate,
+} from "@/lib/reputation";
+import { logTierTransition } from "@/lib/hedera-hcs";
+import { registerAgent, giveFeedback } from "@/lib/erc8004";
 
 export const dynamic = "force-dynamic";
 
@@ -14,9 +20,9 @@ export async function GET(request: Request) {
   }
 
   // Find active escrows with a Hedera schedule
-  const { data: orders, error } = await supabaseAdmin
-    .from("orders")
-    .select("id, hedera_schedule_id, escrow_registration, product_id")
+  const { data: transactions, error } = await supabaseAdmin
+    .from("transactions")
+    .select("id, hedera_schedule_id, escrow_registration, product_id, chain_id")
     .eq("escrow_status", "active")
     .not("hedera_schedule_id", "is", null);
 
@@ -24,101 +30,174 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const results: Array<{ orderId: string; status: string; error?: string }> = [];
+  const results: Array<{ transactionId: string; status: string; error?: string }> = [];
 
-  for (const order of orders ?? []) {
+  for (const transaction of transactions ?? []) {
     try {
       // Poll Hedera mirror node for schedule execution
       const res = await fetch(
-        `${HEDERA_MIRROR_URL}/api/v1/schedules/${order.hedera_schedule_id}`
+        `${HEDERA_MIRROR_URL}/api/v1/schedules/${transaction.hedera_schedule_id}`
       );
 
       if (!res.ok) {
-        results.push({ orderId: order.id, status: "mirror_error" });
+        results.push({ transactionId: transaction.id, status: "mirror_error" });
         continue;
       }
 
       const schedule = await res.json();
 
       if (!schedule.executed_timestamp) {
-        results.push({ orderId: order.id, status: "pending" });
+        results.push({ transactionId: transaction.id, status: "pending" });
         continue;
       }
 
-      if (order.escrow_registration == null) {
-        results.push({ orderId: order.id, status: "missing_registration" });
+      if (transaction.escrow_registration == null) {
+        results.push({ transactionId: transaction.id, status: "missing_registration" });
         continue;
       }
 
-      // Atomically claim this order for release — prevents concurrent cron double-release.
+      // Atomically claim this transaction for release — prevents concurrent cron double-release.
       // Only updates if escrow_status is still 'active' (optimistic lock).
       const { data: claimed, error: claimError } = await supabaseAdmin
-        .from("orders")
+        .from("transactions")
         .update({ escrow_status: "releasing" })
-        .eq("id", order.id)
+        .eq("id", transaction.id)
         .eq("escrow_status", "active")
         .select("id")
         .single();
 
       if (claimError || !claimed) {
         // Another cron run already claimed it
-        results.push({ orderId: order.id, status: "already_claimed" });
+        results.push({ transactionId: transaction.id, status: "already_claimed" });
         continue;
       }
 
       // Look up receiver wallet: product → agent → user.wallet_address
       let receiverWallet: string | null = null;
-      if (order.product_id) {
-        const { data: product } = await supabaseAdmin
+      let product: { agent_id: string | null; price_usdc: number } | null = null;
+      let sellerUser: { id: string; wallet_address: string; erc8004_agent_id: number | null } | null = null;
+      if (transaction.product_id) {
+        const { data: productData } = await supabaseAdmin
           .from("products")
-          .select("agent_id")
-          .eq("id", order.product_id)
+          .select("agent_id, price_usdc")
+          .eq("id", transaction.product_id)
           .single();
+        product = productData;
         if (product?.agent_id) {
-          const { data: user } = await supabaseAdmin
+          const { data: userData } = await supabaseAdmin
             .from("users")
-            .select("wallet_address")
+            .select("id, wallet_address, erc8004_agent_id")
             .eq("id", product.agent_id)
             .single();
-          receiverWallet = user?.wallet_address ?? null;
+          sellerUser = userData;
+          receiverWallet = sellerUser?.wallet_address ?? null;
         }
       }
 
+      // Snapshot Mrate BEFORE marking released — the transaction is still 'releasing'
+      // so it doesn't count in the success rate yet.
+      let beforeMrate: Awaited<ReturnType<typeof getSellerMrate>> | null = null;
+      if (receiverWallet && product?.price_usdc) {
+        beforeMrate = await getSellerMrate(supabaseAdmin, receiverWallet);
+      }
+
       // Release on-chain
-      const txHash = await releaseEscrowOnBase(order.escrow_registration);
+      const txHash = await releaseEscrow(transaction.escrow_registration, transaction.chain_id);
 
       // Record the release
       const { error: updateError } = await supabaseAdmin
-        .from("orders")
+        .from("transactions")
         .update({
           escrow_status: "released",
           tx_hash: txHash,
           escrow_resolved_to: receiverWallet,
           escrow_resolved_at: new Date().toISOString(),
         })
-        .eq("id", order.id);
+        .eq("id", transaction.id);
 
       if (updateError) {
         // On-chain release succeeded but DB failed — log loudly, needs manual intervention
         console.error(
-          `CRITICAL: On-chain release succeeded for order ${order.id} (tx: ${txHash}) but DB update failed:`,
+          `CRITICAL: On-chain release succeeded for transaction ${transaction.id} (tx: ${txHash}) but DB update failed:`,
           updateError
         );
-        results.push({ orderId: order.id, status: "released_db_error", error: updateError.message });
+        results.push({ transactionId: transaction.id, status: "released_db_error", error: updateError.message });
         continue;
       }
 
-      results.push({ orderId: order.id, status: "released" });
+      // --- Reputation event + HCS tier logging ---
+      if (receiverWallet && product?.price_usdc) {
+        const delta = calculateSuccessSeller(product.price_usdc);
+
+        await supabaseAdmin.from("reputation_events").insert({
+          wallet: receiverWallet,
+          delta,
+          reason: "transaction_released",
+          transaction_id: transaction.id,
+          amount_usd: product.price_usdc,
+        });
+
+        // Check Mrate AFTER — transaction is now 'released', so success rate may have changed
+        const after = await getSellerMrate(supabaseAdmin, receiverWallet);
+
+        if (beforeMrate && beforeMrate.tier !== after.tier) {
+          const { data: updatedUser } = await supabaseAdmin
+            .from("users")
+            .select("reputation_sum")
+            .eq("wallet_address", receiverWallet)
+            .single();
+
+          await logTierTransition({
+            wallet: receiverWallet,
+            previousTier: beforeMrate.tier,
+            newTier: after.tier,
+            reputationScore: updatedUser?.reputation_sum ?? 0,
+            transactionId: transaction.id,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      }
+
+      // --- ERC-8004 on-chain reputation (best-effort) ---
+      if (sellerUser && product?.price_usdc) {
+        try {
+          let agentId: bigint;
+
+          if (sellerUser.erc8004_agent_id != null) {
+            agentId = BigInt(sellerUser.erc8004_agent_id);
+          } else {
+            // Lazy-register seller on first completed escrow
+            agentId = await registerAgent(
+              sellerUser.wallet_address as `0x${string}`
+            );
+            await supabaseAdmin
+              .from("users")
+              .update({ erc8004_agent_id: Number(agentId) })
+              .eq("id", sellerUser.id);
+          }
+
+          const delta = calculateSuccessSeller(product.price_usdc);
+          await giveFeedback(agentId, delta, "escrow-release");
+        } catch (erc8004Err) {
+          // ERC-8004 must never block escrow release
+          console.error(
+            `Non-fatal: ERC-8004 feedback failed for transaction ${transaction.id}:`,
+            erc8004Err
+          );
+        }
+      }
+
+      results.push({ transactionId: transaction.id, status: "released" });
     } catch (err) {
       // If on-chain call failed, revert the claim so next run can retry
       await supabaseAdmin
-        .from("orders")
+        .from("transactions")
         .update({ escrow_status: "active" })
-        .eq("id", order.id)
+        .eq("id", transaction.id)
         .eq("escrow_status", "releasing");
 
       results.push({
-        orderId: order.id,
+        transactionId: transaction.id,
         status: "error",
         error: err instanceof Error ? err.message : "Unknown error",
       });

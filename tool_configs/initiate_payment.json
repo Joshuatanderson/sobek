@@ -1,6 +1,6 @@
 {
     "name": "initiate_payment",
-    "description": "Initiates a blockchain payment for a product. Call this when the user wants to order, buy, or pay for a product. The user must have a connected wallet. This triggers a wallet transaction popup on the user's device.",
+    "description": "Initiates a blockchain payment for a product. Call this when the user wants to buy or pay for a product. The user must have a connected wallet. This triggers a wallet transaction popup on the user's device.",
     "type": "client",
     "expects_response": true,
     "response_timeout_secs": 120,

@@ -5,7 +5,7 @@ import { parseEther, parseAbi, decodeEventLog, zeroAddress } from "viem";
 import { writeContract, waitForTransactionReceipt } from "@wagmi/core";
 import { wagmiConfig } from "@/config/wagmi";
 import { ESCROW_BY_CHAIN, ETH_USD_PRICE, PLATFORM_FEE_MULTIPLIER } from "@/config/constants";
-import { createOrder } from "@/app/product/actions";
+import { createTransaction } from "@/app/product/actions";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -70,9 +70,9 @@ export function BuyNativeButton({
         }
       }
 
-      // Create the order record
+      // Create the transaction record
       setStatus("submitting");
-      const result = await createOrder(productId, depositTx, address, nativeCurrency.symbol, registration, chainId);
+      const result = await createTransaction(productId, depositTx, address, nativeCurrency.symbol, registration, chainId);
       if (result.error) {
         setStatus("error");
         setErrorMsg(result.error.message);
@@ -111,7 +111,7 @@ export function BuyNativeButton({
   return (
     <Button size="sm" variant="outline" onClick={handleBuy} disabled={isLoading}>
       {status === "depositing" && "Depositing..."}
-      {status === "submitting" && "Creating order..."}
+      {status === "submitting" && "Creating transaction..."}
       {status === "idle" && `$${price.toFixed(2)} in ${nativeCurrency.symbol}`}
     </Button>
   );

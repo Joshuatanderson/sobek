@@ -151,10 +151,10 @@ async function main() {
   const scheduleId = schReceipt.scheduleId!.toString();
   console.log("  schedule → " + green(scheduleId));
 
-  // ── 7. Insert order ───────────────────────────────────────────────────
-  console.log(bold("\n[7/9] Creating order..."));
-  const { data: order, error: oe } = await supabase
-    .from("orders")
+  // ── 7. Insert transaction ───────────────────────────────────────────────────
+  console.log(bold("\n[7/9] Creating transaction..."));
+  const { data: transaction, error: oe } = await supabase
+    .from("transactions")
     .insert({
       product_id: product!.id,
       tx_hash: depositHash,
@@ -169,7 +169,7 @@ async function main() {
     })
     .select().single();
   if (oe) throw oe;
-  console.log("  order → " + green(order!.id));
+  console.log("  transaction → " + green(transaction!.id));
 
   // ── 8. Poll Hedera ────────────────────────────────────────────────────
   console.log(bold("\n[8/9] Waiting for Hedera timer..."));
@@ -192,7 +192,7 @@ async function main() {
 
   // ── 9. Release on-chain ───────────────────────────────────────────────
   console.log(bold("\n[9/9] Releasing escrow on-chain..."));
-  await supabase.from("orders").update({ escrow_status: "releasing" }).eq("id", order!.id).eq("escrow_status", "active");
+  await supabase.from("transactions").update({ escrow_status: "releasing" }).eq("id", transaction!.id).eq("escrow_status", "active");
 
   const releaseHash = await sellerWallet.writeContract({
     address: ESCROW_ADDRESS,
@@ -203,17 +203,17 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: releaseHash });
   console.log("  " + green(bsLink(releaseHash)));
 
-  await supabase.from("orders").update({
+  await supabase.from("transactions").update({
     escrow_status: "released",
     escrow_resolved_to: seller.address,
     escrow_resolved_at: new Date().toISOString(),
-  }).eq("id", order!.id);
+  }).eq("id", transaction!.id);
 
   // Verify release tx succeeded
   const releaseRcpt = await publicClient.waitForTransactionReceipt({ hash: releaseHash });
   console.log("  release status: " + (releaseRcpt.status === "success" ? green("success") : "reverted"));
 
-  const { data: fo } = await supabase.from("orders").select("escrow_status").eq("id", order!.id).single();
+  const { data: fo } = await supabase.from("transactions").select("escrow_status").eq("id", transaction!.id).single();
   console.log("  DB status: " + green(fo?.escrow_status ?? "?"));
 
   hClient.close();
@@ -226,7 +226,7 @@ async function main() {
   console.log("  Release:  " + dim(bsLink(releaseHash)));
   console.log("  Hedera:   " + dim(`${HEDERA_MIRROR}/api/v1/schedules/${scheduleId}`));
   console.log("  Product:  " + product!.id);
-  console.log("  Order:    " + order!.id);
+  console.log("  Order:    " + transaction!.id);
   console.log("");
 }
 

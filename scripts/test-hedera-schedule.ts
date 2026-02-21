@@ -6,7 +6,7 @@ async function main() {
   console.log("Creating a 5-minute Hedera schedule...");
 
   const { scheduleId, releaseAt } = await createEscrowSchedule(
-    "test-order-001",
+    "test-transaction-001",
     5 / 60 // 5 minutes in hours
   );
 

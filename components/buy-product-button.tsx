@@ -5,7 +5,7 @@ import { parseUnits, parseAbi, decodeEventLog, erc20Abi } from "viem";
 import { writeContract, waitForTransactionReceipt } from "@wagmi/core";
 import { wagmiConfig } from "@/config/wagmi";
 import { USDC_BY_CHAIN, ESCROW_BY_CHAIN, PLATFORM_FEE_MULTIPLIER } from "@/config/constants";
-import { createOrder } from "@/app/product/actions";
+import { createTransaction } from "@/app/product/actions";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -77,9 +77,9 @@ export function BuyProductButton({
         }
       }
 
-      // Create the order record
+      // Create the transaction record
       setStatus("submitting");
-      const result = await createOrder(productId, depositTx, address, "USDC", registration, chainId);
+      const result = await createTransaction(productId, depositTx, address, "USDC", registration, chainId);
       if (result.error) {
         setStatus("error");
         setErrorMsg(result.error.message);
@@ -121,7 +121,7 @@ export function BuyProductButton({
     <Button size="sm" onClick={handleBuy} disabled={isLoading}>
       {status === "approving" && "Approving..."}
       {status === "depositing" && "Depositing..."}
-      {status === "submitting" && "Creating order..."}
+      {status === "submitting" && "Creating transaction..."}
       {status === "idle" && `Buy $${priceUsdc.toFixed(2)}`}
     </Button>
   );

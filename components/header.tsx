@@ -15,8 +15,8 @@ export function Header() {
           <Link href="/product" className="text-sm text-sobek-green-light/80 hover:text-sobek-gold transition-colors">
             Products
           </Link>
-          <Link href="/orders" className="text-sm text-sobek-green-light/80 hover:text-sobek-gold transition-colors">
-            Orders
+          <Link href="/transactions" className="text-sm text-sobek-green-light/80 hover:text-sobek-gold transition-colors">
+            Transactions
           </Link>
         </nav>
         <LinkTelegram />
