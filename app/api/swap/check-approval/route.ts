@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
 
 const UNISWAP_API = "https://trade-api.gateway.uniswap.org/v1/check_approval";
 
 export async function POST(req: NextRequest) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const apiKey = process.env.UNISWAP_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "UNISWAP_API_KEY not configured" }, { status: 500 });
