@@ -148,9 +148,48 @@ curl https://callsobek.xyz/api/products
 
 ---
 
+#### `POST /api/products`
+
+Create a new product listing. The seller identifies themselves by `wallet_address` — a user record is upserted automatically. No auth required.
+
+**Request body:**
+
+```json
+{
+  "title": "GPU Block",
+  "description": "8-hour compute block",
+  "price_usdc": 50,
+  "wallet_address": "0x...",
+  "escrow_duration_seconds": 30
+}
+```
+
+| Field | Type | Required | Default |
+|-------|------|----------|---------|
+| `title` | string | Yes | — |
+| `description` | string | Yes | — |
+| `price_usdc` | number (> 0) | Yes | — |
+| `wallet_address` | string (0x + 40 hex) | Yes | — |
+| `escrow_duration_seconds` | integer (>= 1) | No | null (no escrow) |
+
+**Responses:**
+
+| Status | Body |
+|--------|------|
+| 200 | `{ "product": {...} }` |
+| 400 | `{ "error": "..." }` |
+
+```bash
+curl -X POST https://callsobek.xyz/api/products \
+  -H "Content-Type: application/json" \
+  -d '{"title":"GPU Block","description":"8-hour compute","price_usdc":50,"wallet_address":"0x...","escrow_duration_seconds":30}'
+```
+
+---
+
 #### `POST /api/orders`
 
-Record a purchase after on-chain escrow deposit. No auth — the on-chain deposit is the source of truth.
+Record a transaction after on-chain escrow deposit. No auth — the on-chain deposit is the source of truth.
 
 **Validation:** `tx_hash` must be a valid 66-char hex hash (`0x` + 64 hex). `wallet_address` must be a valid 42-char Ethereum address (`0x` + 40 hex). Duplicate `tx_hash` submissions are rejected (409).
 
@@ -192,7 +231,7 @@ curl -X POST https://callsobek.xyz/api/orders \
 
 #### `GET /api/orders/:id`
 
-Check order status. No auth required.
+Check transaction status. No auth required.
 
 **Response 200:**
 
@@ -216,17 +255,17 @@ Check order status. No auth required.
 }
 ```
 
-**Response 404:** `{ "error": "Order not found" }`
+**Response 404:** `{ "error": "Transaction not found" }`
 
 ```bash
-curl https://callsobek.xyz/api/orders/<order-id>
+curl https://callsobek.xyz/api/orders/<transaction-id>
 ```
 
 ---
 
 #### `POST /api/orders/:id/dispute`
 
-Initiate a dispute on an active escrow. Only the buyer (matching `wallet_address`) can dispute. Cancels the Hedera release schedule.
+Initiate a dispute on an active escrow transaction. Only the buyer (matching `wallet_address`) can dispute. Cancels the Hedera release schedule.
 
 **Request body:**
 
@@ -242,7 +281,7 @@ Initiate a dispute on an active escrow. Only the buyer (matching `wallet_address
 | 400 | `{ "error": "..." }` (not found, not authorized, or already released/disputed) |
 
 ```bash
-curl -X POST https://callsobek.xyz/api/orders/<order-id>/dispute \
+curl -X POST https://callsobek.xyz/api/orders/<transaction-id>/dispute \
   -H "Content-Type: application/json" \
   -d '{"wallet_address":"0xYourAddress"}'
 ```

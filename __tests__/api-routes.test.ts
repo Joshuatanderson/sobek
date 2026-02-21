@@ -27,7 +27,7 @@ vi.mock("@/lib/hedera-dispute", () => ({
 }));
 
 // --- Imports (after mocks) ---
-import { GET as getProducts } from "@/app/api/products/route";
+import { GET as getProducts, POST as postProduct } from "@/app/api/products/route";
 import { POST as postOrder } from "@/app/api/orders/route";
 import { GET as getOrder } from "@/app/api/orders/[id]/route";
 import { POST as postDispute } from "@/app/api/orders/[id]/dispute/route";
@@ -109,6 +109,70 @@ describe("GET /api/products", () => {
 
     expect(res.status).toBe(500);
     expect(body.error).toBe("db down");
+  });
+});
+
+// ======================
+// POST /api/products
+// ======================
+describe("POST /api/products", () => {
+  it("rejects missing title", async () => {
+    const res = await postProduct(jsonRequest({}));
+    const body = await res.json();
+    expect(res.status).toBe(400);
+    expect(body.error).toMatch(/title/);
+  });
+
+  it("rejects missing wallet_address", async () => {
+    const res = await postProduct(
+      jsonRequest({ title: "Test", description: "Desc", price_usdc: 1 })
+    );
+    const body = await res.json();
+    expect(res.status).toBe(400);
+    expect(body.error).toMatch(/wallet_address/);
+  });
+
+  it("rejects negative price", async () => {
+    const res = await postProduct(
+      jsonRequest({
+        title: "Test", description: "Desc", price_usdc: -1,
+        wallet_address: "0x" + "a".repeat(40),
+      })
+    );
+    const body = await res.json();
+    expect(res.status).toBe(400);
+    expect(body.error).toMatch(/positive/);
+  });
+
+  it("rejects invalid escrow_duration_seconds", async () => {
+    const res = await postProduct(
+      jsonRequest({
+        title: "Test", description: "Desc", price_usdc: 1,
+        wallet_address: "0x" + "a".repeat(40), escrow_duration_seconds: 0,
+      })
+    );
+    const body = await res.json();
+    expect(res.status).toBe(400);
+    expect(body.error).toMatch(/escrow_duration/);
+  });
+
+  it("creates product on valid input", async () => {
+    const user = { id: "user-1" };
+    const product = { id: "prod-1", title: "Test" };
+    // Two calls: upsert user, then insert product
+    mockFrom
+      .mockReturnValueOnce(mockChain({ data: user, error: null }))
+      .mockReturnValueOnce(mockChain({ data: product, error: null }));
+
+    const res = await postProduct(
+      jsonRequest({
+        title: "Test", description: "Desc", price_usdc: 5,
+        wallet_address: "0x" + "a".repeat(40),
+      })
+    );
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.product).toEqual(product);
   });
 });
 
@@ -250,7 +314,7 @@ describe("GET /api/orders/[id]", () => {
     const body = await res.json();
 
     expect(res.status).toBe(404);
-    expect(body.error).toBe("Order not found");
+    expect(body.error).toBe("Transaction not found");
   });
 });
 

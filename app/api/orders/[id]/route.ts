@@ -18,7 +18,7 @@ export async function GET(
     .single();
 
   if (error || !data) {
-    return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
   }
 
   return NextResponse.json(data);
