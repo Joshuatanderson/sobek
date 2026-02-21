@@ -122,6 +122,14 @@
   50% { transform: scale(1.12); }
 }
 
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+.animate-pulse-subtle {
+  animation: pulse-subtle 2.5s ease-in-out infinite;
+}
+
 
 :root {
   --radius: 0.625rem;
