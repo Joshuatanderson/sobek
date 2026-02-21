@@ -100,29 +100,29 @@ describe("reputation calculations", () => {
           maxDeal: 100,
           avgDeal: 100,
           mrate: 1.1,
-          orderCount: 10,
+          transactionCount: 10,
         })
       ).toBe(46);
     });
 
-    it("zero orders → 0", () => {
+    it("zero transactions → 0", () => {
       expect(
         computeReputation({
           maxDeal: 0,
           avgDeal: 0,
           mrate: 1.0,
-          orderCount: 0,
+          transactionCount: 0,
         })
       ).toBe(0);
     });
 
-    it("veteran seller: max $100k, avg $1k, 50 orders, Institutional", () => {
+    it("veteran seller: max $100k, avg $1k, 50 transactions, Institutional", () => {
       expect(
         computeReputation({
           maxDeal: 100_000,
           avgDeal: 1_000,
           mrate: 1.0,
-          orderCount: 50,
+          transactionCount: 50,
         })
       ).toBe(271);
     });
@@ -133,18 +133,18 @@ describe("reputation calculations", () => {
           maxDeal: 50,
           avgDeal: 50,
           mrate: 1.1,
-          orderCount: 1,
+          transactionCount: 1,
         })
       ).toBe(11);
     });
 
-    it("scammer: 10 orders, Restricted (80% rate)", () => {
+    it("scammer: 10 transactions, Restricted (80% rate)", () => {
       expect(
         computeReputation({
           maxDeal: 100,
           avgDeal: 100,
           mrate: 0.1,
-          orderCount: 10,
+          transactionCount: 10,
         })
       ).toBe(4);
     });
@@ -153,7 +153,7 @@ describe("reputation calculations", () => {
   // --- getSellerMrate with mocked Supabase ---
 
   describe("getSellerMrate", () => {
-    function mockSupabase(userRow: any, productRows: any[], orderRows: any[]) {
+    function mockSupabase(userRow: any, productRows: any[], transactionRows: any[]) {
       const chainable = (result: { data: any; error: null }) => {
         const chain: any = {
           select: () => chain,
@@ -178,11 +178,11 @@ describe("reputation calculations", () => {
               }),
             };
           }
-          if (table === "orders") {
+          if (table === "transactions") {
             return {
               select: () => ({
                 in: () => ({
-                  in: () => Promise.resolve({ data: orderRows, error: null }),
+                  in: () => Promise.resolve({ data: transactionRows, error: null }),
                 }),
               }),
             };
@@ -198,18 +198,18 @@ describe("reputation calculations", () => {
       expect(result).toEqual({ tier: "Sovereign", mrate: 1.1 });
     });
 
-    it("returns Sovereign for seller with no resolved orders", async () => {
+    it("returns Sovereign for seller with no resolved transactions", async () => {
       const sb = mockSupabase({ id: "u1" }, [{ id: "p1" }], []);
       const result = await getSellerMrate(sb, "0xseller");
       expect(result).toEqual({ tier: "Sovereign", mrate: 1.1 });
     });
 
     it("returns Restricted for seller with <90% success", async () => {
-      const orders = [
+      const transactions = [
         ...Array(8).fill({ escrow_status: "released" }),
         ...Array(3).fill({ escrow_status: "refunded" }),
       ];
-      const sb = mockSupabase({ id: "u1" }, [{ id: "p1" }], orders);
+      const sb = mockSupabase({ id: "u1" }, [{ id: "p1" }], transactions);
       const result = await getSellerMrate(sb, "0xseller");
       // 8/11 = 72.7% → Restricted
       expect(result.tier).toBe("Restricted");
@@ -217,11 +217,11 @@ describe("reputation calculations", () => {
     });
 
     it("returns Institutional for 95-98% success", async () => {
-      const orders = [
+      const transactions = [
         ...Array(96).fill({ escrow_status: "released" }),
         ...Array(4).fill({ escrow_status: "refunded" }),
       ];
-      const sb = mockSupabase({ id: "u1" }, [{ id: "p1" }], orders);
+      const sb = mockSupabase({ id: "u1" }, [{ id: "p1" }], transactions);
       const result = await getSellerMrate(sb, "0xseller");
       // 96/100 = 96% → Institutional
       expect(result.tier).toBe("Institutional");
