@@ -24,7 +24,6 @@ Every transaction builds a decentralized reputation score — logged to Hedera C
 - **Decentralized reputation** — power-law scoring with SLA tiers (Sovereign, Institutional, Commercial, Restricted), stored in Supabase, logged to Hedera, and published onchain via ERC-8004
 - **Token swaps** — Uniswap integration for ETH/USDC/WETH swaps directly through the voice agent
 - **Dispute resolution** — arbiter-driven refund or release with automatic reputation penalties
-- **Telegram notifications** — buyers and sellers get notified on escrow releases and dispute outcomes
 - **Multi-chain** — deployed on Base, Base Sepolia, and ADI Testnet
 
 ## Tech stack

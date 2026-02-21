@@ -90,7 +90,7 @@ curl -X POST https://callsobek.xyz/api/swap/execute \
 
 #### `POST /api/admin/resolve-dispute`
 
-Resolves a disputed escrow by either refunding the buyer or releasing to the seller. Executes on-chain first, then updates DB, adjusts reputation, logs tier transitions to Hedera HCS, and notifies both parties via Telegram.
+Resolves a disputed escrow by either refunding the buyer or releasing to the seller. Executes on-chain first, then updates DB, adjusts reputation, and logs tier transitions to Hedera HCS.
 
 **Auth:** `Authorization: Bearer <INTERNAL_API_SECRET>`
 
