@@ -57,7 +57,7 @@ vi.mock("@/utils/supabase/admin", () => ({
                   data: {
                     id: "user-1",
                     wallet_address: "0xSeller",
-                    reputation_sum: 50,
+                    reputation_score: 50,
                   },
                   error: null,
                 }),
@@ -97,10 +97,6 @@ vi.mock("@/lib/reputation", () => ({
 
 vi.mock("@/lib/hedera-hcs", () => ({
   logTierTransition: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock("@/utils/telegram", () => ({
-  notifyUser: vi.fn().mockResolvedValue(true),
 }));
 
 // Import AFTER mocks
@@ -199,13 +195,4 @@ describe("POST /api/admin/resolve-dispute", () => {
     }));
   });
 
-  it("notifies both parties", async () => {
-    const { notifyUser } = await import("@/utils/telegram");
-
-    await POST(
-      makeRequest({ transactionId: "tx-123", resolution: "refund" }, "test-secret")
-    );
-
-    expect(notifyUser).toHaveBeenCalled();
-  });
 });

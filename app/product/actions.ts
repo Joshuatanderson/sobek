@@ -2,7 +2,6 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { supabaseAdmin } from "@/utils/supabase/admin";
-import { notifyUser } from "@/utils/telegram";
 import { revalidatePath } from "next/cache";
 import { createEscrowSchedule } from "@/lib/hedera-schedule";
 import { cancelEscrowSchedule } from "@/lib/hedera-dispute";
@@ -82,7 +81,7 @@ export async function getProducts() {
 
   const { data, error } = await supabase
     .from("products")
-    .select("id, title, description, price_usdc, status, users:agent_id(display_name, telegram_handle, wallet_address)")
+    .select("id, title, description, price_usdc, status, users:agent_id(display_name, wallet_address)")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -166,14 +165,6 @@ export async function createTransaction(
     return { data: null, error: { message: transactionError.message } };
   }
 
-  // Notify provider via Telegram
-  if (product.agent_id) {
-    await notifyUser(
-      product.agent_id,
-      `New transaction for "${product.title}" (${paymentCurrency === "USDC" ? "$" : ""}${product.price_usdc} ${paymentCurrency}). Tx: ${txHash}`
-    );
-  }
-
   revalidatePath("/product");
   return { data: transaction, error: null };
 }
@@ -223,20 +214,6 @@ export async function initiateDispute(transactionId: string, walletAddress: stri
       // the DB status is already 'disputed' which blocks the cron from releasing
       console.error("Hedera schedule cancel failed (may already be executed):", err);
     }
-  }
-
-  // Notify product owner about the dispute
-  const { data: product } = await supabaseAdmin
-    .from("products")
-    .select("agent_id, title")
-    .eq("id", transaction.product_id!)
-    .single();
-
-  if (product?.agent_id) {
-    await notifyUser(
-      product.agent_id,
-      `Dispute initiated on transaction for "${product.title}" by ${walletAddress}`
-    );
   }
 
   revalidatePath("/product");

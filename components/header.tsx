@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { LinkTelegram } from "@/components/link-telegram";
 import { SettingsLink } from "@/components/settings-link";
 import { SobekLogo } from "@/components/sobek-logo";
 
@@ -25,7 +24,6 @@ export function Header() {
             Agents
           </Link>
         </nav>
-        <LinkTelegram />
         <div className="min-h-[40px] min-w-[148px] flex items-center justify-end">
           <ConnectButton showBalance={false} />
         </div>

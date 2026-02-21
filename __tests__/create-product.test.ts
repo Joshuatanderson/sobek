@@ -26,10 +26,6 @@ vi.mock("@/utils/supabase/admin", () => ({
   },
 }));
 
-vi.mock("@/utils/telegram", () => ({
-  notifyUser: vi.fn(),
-}));
-
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));

@@ -7,7 +7,6 @@ import {
   getSellerMrate,
 } from "@/lib/reputation";
 import { logTierTransition } from "@/lib/hedera-hcs";
-import { notifyUser } from "@/utils/telegram";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +57,7 @@ export async function POST(request: Request) {
   let product: { agent_id: string | null; price_usdc: number } | null = null;
   let sellerWallet: string | null = null;
   let sellerId: string | null = null;
+  let sellerAgentId: number | null = null;
   if (transaction.product_id) {
     const { data: p } = await supabaseAdmin
       .from("products")
@@ -68,11 +68,12 @@ export async function POST(request: Request) {
     if (product?.agent_id) {
       const { data: seller } = await supabaseAdmin
         .from("users")
-        .select("id, wallet_address")
+        .select("id, wallet_address, erc8004_agent_id")
         .eq("id", product.agent_id)
         .single();
       sellerId = seller?.id ?? null;
       sellerWallet = seller?.wallet_address ?? null;
+      sellerAgentId = seller?.erc8004_agent_id ?? null;
     }
   }
 
@@ -165,7 +166,7 @@ export async function POST(request: Request) {
     if (beforeMrate.tier !== after.tier) {
       const { data: updatedUser } = await supabaseAdmin
         .from("users")
-        .select("reputation_sum")
+        .select("reputation_score")
         .eq("wallet_address", sellerWallet)
         .single();
 
@@ -173,19 +174,13 @@ export async function POST(request: Request) {
         wallet: sellerWallet,
         previousTier: beforeMrate.tier,
         newTier: after.tier,
-        reputationScore: updatedUser?.reputation_sum ?? 0,
+        reputationScore: updatedUser?.reputation_score ?? 0,
         transactionId,
         timestamp: new Date().toISOString(),
+        erc8004_agent_id: sellerAgentId,
       });
     }
   }
-
-  // Notify both parties
-  const resolutionLabel = resolution === "refund" ? "refunded to buyer" : "released to seller";
-  const message = `Dispute resolved: transaction ${transactionId.slice(0, 8)}… has been ${resolutionLabel}.`;
-
-  if (sellerId) notifyUser(sellerId, message).catch(() => {});
-  if (buyerId) notifyUser(buyerId, message).catch(() => {});
 
   return NextResponse.json({ status: finalStatus, txHash });
 }

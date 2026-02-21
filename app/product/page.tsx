@@ -4,6 +4,7 @@ import { Header } from "@/components/header";
 import { CreateProductForm } from "./create-product-form";
 import { BuyProductButton } from "@/components/buy-product-button";
 import { BuyNativeButton } from "@/components/buy-native-button";
+import { PLATFORM_FEE_MULTIPLIER } from "@/config/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -22,7 +23,6 @@ type ProductRow = {
   status: string;
   users: {
     display_name: string | null;
-    telegram_handle: string | null;
     wallet_address: string;
   } | null;
 };
@@ -34,7 +34,6 @@ function truncateWallet(addr: string) {
 function getProviderLabel(user: ProductRow["users"]) {
   if (!user) return "Unknown";
   if (user.display_name) return user.display_name;
-  if (user.telegram_handle) return `@${user.telegram_handle}`;
   return truncateWallet(user.wallet_address);
 }
 
@@ -46,7 +45,7 @@ function ProductsTableSkeleton() {
           <TableRow className="border-sobek-forest/30">
             <TableHead className="text-sobek-green-light/80">Title</TableHead>
             <TableHead className="text-sobek-green-light/80">Description</TableHead>
-            <TableHead className="text-sobek-green-light/80 text-right">Price (USDC)</TableHead>
+            <TableHead className="text-sobek-green-light/80 text-right">Price</TableHead>
             <TableHead className="text-sobek-green-light/80">Provider</TableHead>
             <TableHead className="text-sobek-green-light/80"></TableHead>
           </TableRow>
@@ -81,7 +80,7 @@ async function ProductsTable() {
           <TableRow className="border-sobek-forest/30 hover:bg-sobek-forest/20">
             <TableHead className="text-sobek-green-light/80">Title</TableHead>
             <TableHead className="text-sobek-green-light/80">Description</TableHead>
-            <TableHead className="text-sobek-green-light/80 text-right">Price (USDC)</TableHead>
+            <TableHead className="text-sobek-green-light/80 text-right">Price</TableHead>
             <TableHead className="text-sobek-green-light/80">Provider</TableHead>
             <TableHead className="text-sobek-green-light/80"></TableHead>
           </TableRow>
@@ -91,7 +90,7 @@ async function ProductsTable() {
             <TableRow key={product.id} className="border-sobek-forest/30 hover:bg-sobek-forest/20">
               <TableCell className="font-medium text-sobek-green-light">{product.title}</TableCell>
               <TableCell className="text-sobek-green-light/70 max-w-xs truncate">{product.description}</TableCell>
-              <TableCell className="text-right text-sobek-green-light">${product.price_usdc.toFixed(2)}</TableCell>
+              <TableCell className="text-right text-sobek-green-light">${(product.price_usdc * PLATFORM_FEE_MULTIPLIER).toFixed(2)}</TableCell>
               <TableCell className="text-sobek-green-light/70">{getProviderLabel(product.users)}</TableCell>
               <TableCell>
                 {product.users?.wallet_address && (

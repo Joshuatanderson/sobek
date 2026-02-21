@@ -18,10 +18,8 @@ const supabase = createClient();
 export type UserProfile = {
   display_name: string | null;
   wallet_address: string;
-  telegram_handle: string | null;
-  telegram_chat_id: number | null;
-  erc8004_agent_id: number | null;
-  reputation_sum: number | null;
+erc8004_agent_id: number | null;
+  reputation_score: number | null;
 };
 
 type AuthContextValue = {
@@ -48,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await supabase
       .from("users")
       .select(
-        "display_name, wallet_address, telegram_handle, telegram_chat_id, erc8004_agent_id, reputation_sum"
+        "display_name, wallet_address, erc8004_agent_id, reputation_score"
       )
       .eq("id", userId)
       .single();

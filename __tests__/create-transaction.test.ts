@@ -2,14 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies before importing the module
 const mockFrom = vi.fn();
-const mockNotifyUser = vi.fn();
 
 vi.mock("@/utils/supabase/admin", () => ({
   supabaseAdmin: { from: (...args: unknown[]) => mockFrom(...args) },
-}));
-
-vi.mock("@/utils/telegram", () => ({
-  notifyUser: (...args: unknown[]) => mockNotifyUser(...args),
 }));
 
 vi.mock("@/utils/supabase/server", () => ({
@@ -75,18 +70,13 @@ const PRODUCT = {
 };
 
 describe("createTransaction", () => {
-  it("creates a transaction and notifies provider", async () => {
+  it("creates a transaction successfully", async () => {
     mockHappyPath({ data: { id: "tx-1", status: "paid" }, error: null });
-    mockNotifyUser.mockResolvedValue(true);
 
     const result = await createTransaction("product-1", "0xabc123", "0xWALLET");
 
     expect(result.error).toBeNull();
     expect(result.data).toEqual({ id: "tx-1", status: "paid" });
-    expect(mockNotifyUser).toHaveBeenCalledWith(
-      "provider-1",
-      expect.stringContaining("Logo Design")
-    );
   });
 
   it("returns error when product not found", async () => {
@@ -102,7 +92,7 @@ describe("createTransaction", () => {
     expect(mockFrom).toHaveBeenCalledTimes(1);
   });
 
-  it("skips notification when product has no agent_id", async () => {
+  it("succeeds when product has no agent_id", async () => {
     const productNoAgent = { ...PRODUCT, agent_id: null };
     mockFrom
       .mockReturnValueOnce(mockSelectQuery({ data: productNoAgent, error: null }))
@@ -114,7 +104,6 @@ describe("createTransaction", () => {
     const result = await createTransaction("product-1", "0xdef", "0xWALLET");
 
     expect(result.error).toBeNull();
-    expect(mockNotifyUser).not.toHaveBeenCalled();
   });
 
   it("returns error when transaction insert fails", async () => {
@@ -123,7 +112,6 @@ describe("createTransaction", () => {
     const result = await createTransaction("product-1", "0xabc123", "0xWALLET");
 
     expect(result.error?.message).toBe("duplicate key");
-    expect(mockNotifyUser).not.toHaveBeenCalled();
   });
 
   it("includes client_id and product_id in the transaction insert", async () => {
@@ -142,8 +130,6 @@ describe("createTransaction", () => {
       .mockReturnValueOnce(mockUpsertQuery({ data: CLIENT, error: null }))
       .mockReturnValueOnce({ insert: insertMock });
 
-    mockNotifyUser.mockResolvedValue(true);
-
     await createTransaction("product-1", "0xabc123", "0xWALLET");
 
     const insertPayload = insertMock.mock.calls[0][0];
@@ -151,15 +137,4 @@ describe("createTransaction", () => {
     expect(insertPayload).toHaveProperty("client_id", CLIENT.id);
   });
 
-  it("includes currency in notification", async () => {
-    mockHappyPath({ data: { id: "tx-3", status: "paid" }, error: null });
-    mockNotifyUser.mockResolvedValue(true);
-
-    await createTransaction("product-1", "0xabc", "0xWALLET", "ETH");
-
-    expect(mockNotifyUser).toHaveBeenCalledWith(
-      "provider-1",
-      expect.stringContaining("ETH")
-    );
-  });
 });

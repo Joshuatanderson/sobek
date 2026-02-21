@@ -90,16 +90,17 @@ export function useSobekVoice({ onNavigate }: SobekVoiceOptions = {}) {
           const supabase = createClient();
           const { data, error } = await supabase
             .from("products")
-            .select("id, title, description, price_usdc, status, users:agent_id(display_name, telegram_handle)")
+            .select("id, title, description, price_usdc, status, users:agent_id(display_name)")
             .order("created_at", { ascending: false });
 
           if (error) return "Sorry, I couldn't fetch the products right now.";
           if (!data || data.length === 0) return "There are no products available right now.";
 
           const lines = data.map((t) => {
-            const user = t.users as { display_name: string | null; telegram_handle: string | null } | null;
-            const creator = user?.display_name || user?.telegram_handle || "Anonymous";
-            return `[Product ID: ${t.id}] ${t.title} — ${t.description}. Price: $${t.price_usdc} USDC. Status: ${t.status}. Posted by ${creator}.`;
+            const user = t.users as { display_name: string | null } | null;
+            const creator = user?.display_name || "Anonymous";
+            const buyerPrice = (t.price_usdc * PLATFORM_FEE_MULTIPLIER).toFixed(2);
+            return `[Product ID: ${t.id}] ${t.title} — ${t.description}. Price: $${buyerPrice} USDC. Status: ${t.status}. Posted by ${creator}.`;
           });
           return `There are ${data.length} products available:\n${lines.join("\n")}`;
         } catch {

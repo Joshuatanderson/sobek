@@ -8,7 +8,6 @@ import {
   getSellerMrate,
 } from "@/lib/reputation";
 import { logTierTransition, logReputationEvent } from "@/lib/hedera-hcs";
-import { notifyUser } from "@/utils/telegram";
 import { revalidatePath } from "next/cache";
 
 export async function resolveDispute(
@@ -157,7 +156,7 @@ export async function resolveDispute(
     if (beforeMrate.tier !== after.tier) {
       const { data: updatedUser } = await supabaseAdmin
         .from("users")
-        .select("reputation_sum")
+        .select("reputation_score")
         .eq("wallet_address", sellerWallet)
         .single();
 
@@ -165,18 +164,12 @@ export async function resolveDispute(
         wallet: sellerWallet,
         previousTier: beforeMrate.tier,
         newTier: after.tier,
-        reputationScore: updatedUser?.reputation_sum ?? 0,
+        reputationScore: updatedUser?.reputation_score ?? 0,
         transactionId,
         timestamp: new Date().toISOString(),
       });
     }
   }
-
-  // Notify
-  const label = resolution === "refund" ? "refunded to buyer" : "released to seller";
-  const message = `Dispute resolved: transaction ${transactionId.slice(0, 8)}… has been ${label}.`;
-  if (sellerId) notifyUser(sellerId, message).catch(() => {});
-  if (buyerId) notifyUser(buyerId, message).catch(() => {});
 
   revalidatePath("/transactions");
   return { error: null, txHash };
